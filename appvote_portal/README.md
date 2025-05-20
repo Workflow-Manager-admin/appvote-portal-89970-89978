@@ -5,7 +5,7 @@ A stylish web application for submitting and voting on apps, built with React an
 ## Features
 
 - 👥 User authentication with email alias support
-- 🎨 Clean and responsive UI with orange, white, and brown theme
+- 🎨 Clean and responsive UI with blue and white theme
 - 📱 App submission with preview image upload
 - 📊 Voting system (up to 5 votes per user)
 - 🛡️ Anonymous voting (submitter hidden except for admin)
@@ -80,8 +80,8 @@ npm run build
 ## Styling
 
 The application uses a custom theme with:
-- Primary color: Orange (#E87A41)
-- Secondary colors: White (#FFFFFF) and Brown (#8B4513)
+- Primary color: Blue (#1976D2)
+- Secondary colors: White (#FFFFFF) and Light Blue (#42A5F5)
 - Dark backgrounds with light text for contrast
 - Responsive layout for all device sizes
 

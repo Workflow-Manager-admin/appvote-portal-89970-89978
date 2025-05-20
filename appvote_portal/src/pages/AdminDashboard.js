@@ -5,7 +5,7 @@ import supabase from '../config/supabaseClient';
 import ImageRepairTool from '../utils/ImageRepairTool';
 
 const AdminDashboard = () => {
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [shareUrl, setShareUrl] = useState('');

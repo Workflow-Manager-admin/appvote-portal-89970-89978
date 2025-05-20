@@ -17,7 +17,10 @@ const Router = () => {
     if (loading && !user) {
       return (
         <div className="loading-container">
-          <div className="loading">Loading your session...</div>
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <div>Loading your session...</div>
+          </div>
         </div>
       );
     }
@@ -31,7 +34,10 @@ const Router = () => {
     if (loading && (!user || userRole === null)) {
       return (
         <div className="loading-container">
-          <div className="loading">Loading your session...</div>
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <div>Loading your session...</div>
+          </div>
         </div>
       );
     }

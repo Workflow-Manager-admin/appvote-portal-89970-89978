@@ -84,7 +84,7 @@ const AddApp = () => {
       }
 
       // Save app data to database
-      const { data: appData, error: appError } = await supabase
+      const { error: appError } = await supabase
         .from('apps')
         .insert([
           {
@@ -141,7 +141,7 @@ const AddApp = () => {
               {...register('link', { 
                 required: 'App URL is required',
                 pattern: {
-                  value: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+                  value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
                   message: 'Please enter a valid URL'
                 }
               })}

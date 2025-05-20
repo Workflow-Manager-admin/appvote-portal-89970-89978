@@ -61,7 +61,7 @@ const DebugPage = () => {
       
       // Upload test image
       const filePath = `debug/test-${Date.now()}.png`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('app_images')
         .upload(filePath, imageData, {
           contentType: 'image/png'

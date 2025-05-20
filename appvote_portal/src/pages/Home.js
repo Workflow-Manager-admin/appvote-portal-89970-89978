@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import supabase, { getImageUrl } from '../config/supabaseClient';
@@ -8,15 +8,43 @@ const Home = () => {
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState(null);
+  // Removed unused userProfile state
 
-  useEffect(() => {
-    fetchApps();
-    fetchUserVotes();
-    fetchUserProfile();
-  }, [user?.id]);
+  // Define the fetch functions with useCallback to avoid recreation on each render
+  const fetchUserVotes = useCallback(async () => {
+    if (!user?.id) return;
 
-  const fetchApps = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('votes')
+        .select('app_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setUserVotes(data?.map(vote => vote.app_id) || []);
+    } catch (error) {
+      console.error('Error fetching user votes:', error.message);
+    }
+  }, [user]);
+
+  const fetchUserProfile = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      // Profile data not used in component
+    } catch (error) {
+      console.error('Error fetching user profile:', error.message);
+    }
+  }, [user]);
+
+  const fetchApps = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('apps')
@@ -39,40 +67,13 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchUserVotes = async () => {
-    if (!user?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('votes')
-        .select('app_id')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      setUserVotes(data?.map(vote => vote.app_id) || []);
-    } catch (error) {
-      console.error('Error fetching user votes:', error.message);
-    }
-  };
-
-  const fetchUserProfile = async () => {
-    if (!user?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      setUserProfile(data);
-    } catch (error) {
-      console.error('Error fetching user profile:', error.message);
-    }
-  };
+  useEffect(() => {
+    fetchApps();
+    fetchUserVotes();
+    fetchUserProfile();
+  }, [fetchApps, fetchUserVotes, fetchUserProfile]);
 
   const handleVote = async (appId) => {
     if (!user) {

@@ -1,6 +1,14 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import supabase from '../config/supabaseClient';
 
+/**
+ * Authentication context for managing user sessions throughout the app.
+ * Features:
+ * - User authentication with Supabase
+ * - Session persistence and management
+ * - Automatic logout of existing sessions when attempting new sign-ins
+ * - Role-based access control
+ */
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -15,6 +23,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
+  
+  // Use useRef instead of a dependency to avoid infinite loop
+  const previousUserRef = useRef(null);
 
   useEffect(() => {
     // Track if component is mounted to prevent state updates after unmount
@@ -24,6 +35,7 @@ export function AuthProvider({ children }) {
     const getInitialSession = async () => {
       try {
         console.log('Getting initial auth session...');
+        setLoading(true); // Ensure loading is true at the start
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -37,7 +49,7 @@ export function AuthProvider({ children }) {
         if (session && isMounted) {
           console.log('User found in session:', session.user.email);
           setUser(session.user);
-          // Fetch user role from the database
+          // Fetch user role from the database and explicitly wait for it to complete
           await fetchUserRole(session.user.id);
         }
       } catch (error) {
@@ -45,6 +57,7 @@ export function AuthProvider({ children }) {
       } finally {
         // Only update state if component is still mounted
         if (isMounted) setLoading(false);
+        console.log('Initial auth loading completed:', isMounted);
       }
     };
 
@@ -64,24 +77,41 @@ export function AuthProvider({ children }) {
         
         if (session && isMounted) {
           // Don't refetch user data if it's just a token refresh with the same user
-          const isUserChange = !user || user.id !== session.user.id;
+          const isUserChange = !previousUserRef.current || previousUserRef.current.id !== session.user.id;
+          previousUserRef.current = session.user;
           
           console.log('User authenticated:', session.user.email);
           setUser(session.user);
           
           // Only fetch user role when the user actually changes
           if (isUserChange) {
-            await fetchUserRole(session.user.id);
+            try {
+              // Maintain loading state until role is fetched
+              const roleLoaded = await fetchUserRole(session.user.id);
+              console.log('User role loaded:', roleLoaded ? 'Success' : 'Failed');
+            } catch (error) {
+              console.error('Error fetching user role during auth change:', error);
+            } finally {
+              // Now we can safely turn off loading after role fetch attempt completes
+              if (shouldSetLoading && isMounted) {
+                setLoading(false);
+              }
+            }
+          } else {
+            // If we don't need to fetch the role, turn off loading immediately
+            if (shouldSetLoading && isMounted) {
+              setLoading(false);
+            }
           }
         } else if (isMounted) {
           console.log('User signed out or session expired');
           setUser(null);
           setUserRole(null);
-        }
-        
-        // Always reset loading state if we set it earlier
-        if (shouldSetLoading && isMounted) {
-          setLoading(false);
+          
+          // Turn off loading state for sign out
+          if (shouldSetLoading && isMounted) {
+            setLoading(false);
+          }
         }
       }
     );
@@ -90,11 +120,14 @@ export function AuthProvider({ children }) {
       isMounted = false;
       subscription?.unsubscribe();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // We intentionally omit 'user' from dependencies to avoid infinite loop
+  // since we update user state inside this effect
   
   // Fetch user role from profiles table
   const fetchUserRole = async (userId) => {
     try {
+      console.log('Fetching user role for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -103,14 +136,21 @@ export function AuthProvider({ children }) {
       
       if (error) {
         console.error('Error fetching user role:', error.message);
+        // Still consider the operation "complete" even if it failed
         return false;
       } else if (data) {
+        console.log('User role fetched successfully:', data.role);
         setUserRole(data.role);
         return true;
+      } else {
+        console.log('No user role found for ID:', userId);
+        // Set a default role if none found
+        setUserRole('user');
+        return true;
       }
-      return false;
     } catch (error) {
       console.error('Error in fetchUserRole:', error.message);
+      // Still consider the operation "complete" even if it failed
       return false;
     }
   };
@@ -118,6 +158,20 @@ export function AuthProvider({ children }) {
   // Register a new user with email and password
   const register = async (email, password, username, registrationNumber = null) => {
     try {
+      // Check if user already has an active session
+      if (user) {
+        console.log('Active session detected - logging out before registration');
+        // Log out the current user before attempting registration
+        const { error: logoutError } = await logout();
+        
+        if (logoutError) {
+          console.error('Error logging out existing session before registration:', logoutError.message);
+          // Continue with registration attempt even if logout fails
+        } else {
+          console.log('Successfully logged out existing session before registration');
+        }
+      }
+      
       // Check if the email includes '+1' for email alias
       const emailToUse = email.includes('+1') ? email : email;
       
@@ -175,6 +229,20 @@ export function AuthProvider({ children }) {
       // Support email alias with +1
       const emailToUse = email.includes('+1') ? email : email;
       
+      // Check if user already has an active session
+      if (user) {
+        console.log('Active session detected - logging out before new sign in');
+        // Log out the current user before attempting new login
+        const { error: logoutError } = await logout();
+        
+        if (logoutError) {
+          console.error('Error logging out existing session:', logoutError.message);
+          // Continue with login attempt even if logout fails
+        } else {
+          console.log('Successfully logged out existing session');
+        }
+      }
+      
       setLoading(true); // Set loading to true at the start of login
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -182,20 +250,19 @@ export function AuthProvider({ children }) {
         password
       });
       
-      if (!error && data?.user) {
-        // Set user immediately to trigger any UI updates
-        setUser(data.user);
-        // Fetch user role asynchronously
-        await fetchUserRole(data.user.id);
+      // The onAuthStateChange listener will handle loading state and setting user data
+      // for successful logins, so we don't need to duplicate that logic here
+      
+      if (error) {
+        // Only need to reset loading state on error since auth listener won't fire
+        setLoading(false);
       }
       
       return { data, error };
     } catch (error) {
       console.error('Error in login:', error.message);
+      setLoading(false); // Ensure loading is turned off on exception
       return { data: null, error };
-    } finally {
-      // Ensure loading is always set to false at the end
-      setLoading(false);
     }
   };
   

@@ -7,12 +7,15 @@ import 'react-toastify/dist/ReactToastify.css';
 const Layout = () => {
   const { loading, user } = useAuth();
 
-  // Only show loading indicator when we don't know if user is authenticated yet
+  // Show loading indicator when authentication is in progress
   // This prevents showing loading screen during regular navigation
   if (loading && user === null) {
     return (
       <div className="loading-container">
-        <div className="loading">Loading your session...</div>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <div>Loading your session...</div>
+        </div>
       </div>
     );
   }

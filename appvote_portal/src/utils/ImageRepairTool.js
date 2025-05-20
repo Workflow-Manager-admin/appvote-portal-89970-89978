@@ -151,7 +151,7 @@ const ImageRepairTool = () => {
         
         try {
           // Update the URL in the database
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from('apps')
             .update({ image_url: img.newUrl })
             .eq('id', img.id);
