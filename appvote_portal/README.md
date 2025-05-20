@@ -1,82 +1,96 @@
-c# Lightweight React Template for KAVIA
+# AppVote Portal
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+A stylish web application for submitting and voting on apps, built with React and Supabase.
 
 ## Features
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+- 👥 User authentication with email alias support
+- 🎨 Clean and responsive UI with orange, white, and brown theme
+- 📱 App submission with preview image upload
+- 📊 Voting system (up to 5 votes per user)
+- 🛡️ Anonymous voting (submitter hidden except for admin)
+- 📈 Admin dashboard with sharing capabilities
 
-## Getting Started
+## Setup Instructions
 
-In the project directory, you can run:
+### 1. Supabase Setup
 
-### `npm start`
+1. Create a new Supabase project at https://supabase.com
+2. Set up the following resources in your Supabase project:
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+#### Database Tables
 
-### `npm test`
+Run the SQL commands found in `supabase_setup.sql` in the SQL Editor of your Supabase project.
 
-Launches the test runner in interactive watch mode.
+#### Storage Bucket Setup
 
-### `npm run build`
+1. In the Supabase dashboard, navigate to the Storage section
+2. Create a new bucket named "app_images"
+3. Configure the bucket settings:
+   - Enable "Public bucket" option (for image display)
+   - Set appropriate RLS policies:
+     - Allow authenticated users to upload
+     - Allow users to update/delete their own files
+     - Allow public read access
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+> ⚠️ **Important**: Storage buckets **cannot** be created using the SQL script or client SDK with anon credentials. You must create them manually through the Supabase dashboard. See `SUPABASE_STORAGE_SETUP.md` for detailed instructions on setting up the `app_images` bucket.
 
-## Customization
+### 2. Environment Variables
 
-### Colors
+1. Copy the `.env.example` file to a new file named `.env` in the project root
+2. Fill in your Supabase credentials:
+   ```
+   REACT_APP_SUPABASE_URL=your_project_url
+   REACT_APP_SUPABASE_ANON_KEY=your_anon_key
+   ```
 
-The main brand colors are defined as CSS variables in `src/App.css`:
+### 3. Local Development
 
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
+Install dependencies:
+```bash
+npm install
 ```
 
-### Components
+Start the development server:
+```bash
+npm start
+```
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+Build for production:
+```bash
+npm run build
+```
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
+## User Roles and Permissions
 
-## Learn More
+### Regular Users
+- Register/login with email aliases (+1 support)
+- Submit apps with preview images
+- Vote for up to 5 apps
+- Cannot vote for their own apps
+- Cannot see who submitted other apps
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Admin
+- Full visibility of submitter information
+- Access to admin dashboard
+- View app ranking and vote counts
+- Share top 10 list with others
+- Export data to CSV
 
-### Code Splitting
+## Styling
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+The application uses a custom theme with:
+- Primary color: Orange (#E87A41)
+- Secondary colors: White (#FFFFFF) and Brown (#8B4513)
+- Dark backgrounds with light text for contrast
+- Responsive layout for all device sizes
 
-### Analyzing the Bundle Size
+## Dependencies
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- React
+- React Router DOM
+- React Hook Form
+- Supabase JS Client
+- React Toastify
+- UUID
+- React Icons
