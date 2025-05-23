@@ -23,7 +23,7 @@ export function ContestProvider({ children }) {
   const [currentWeek, setCurrentWeek] = useState(null);
   const [winners, setWinners] = useState({});
   const [loading, setLoading] = useState(true);
-  const { isAdmin, user } = useAuth();
+  const { isAdmin } = useAuth();
 
   // Fetch contest weeks data
   useEffect(() => {
