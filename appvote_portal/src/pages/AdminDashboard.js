@@ -13,7 +13,8 @@ const AdminDashboard = () => {
     switchWeek, 
     updateContestStatus,
     selectWinner,
-    getWinnersForWeek
+    getWinnersForWeek,
+    hasValidContestStructure
   } = useContest();
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
