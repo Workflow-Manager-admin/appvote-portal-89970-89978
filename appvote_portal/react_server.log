@@ -1,100 +1,74 @@
 
-> appvote-portal@0.1.0 start
+> kavia-ai-app-contest@0.1.0 start
 > react-scripts start
 
-(node:1123) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:868) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-(node:1123) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:868) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 Starting the development server...
 
-Compiled successfully!
-
-You can now view appvote-portal in the browser.
-
-  Local:            http://localhost:3000
-  On Your Network:  http://172.17.0.2:3000
-
-Note that the development build is not optimized.
-To create a production build, use npm run build.
-
-webpack compiled successfully
-Compiling...
-Compiled successfully!
-webpack compiled successfully
-Compiling...
 Compiled with warnings.
 
 [eslint] 
+src/pages/AdminDashboard.js
+  Line 39:6:  React Hook useEffect has a missing dependency: 'fetchApps'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
 src/utils/applyContestSchema.js
   Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
   Line 20:15:  'data' is assigned a value but never used         no-unused-vars
   Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
+
+src/utils/validateContestSchema.js
+  Line 84:21:   'apps' is assigned a value but never used   no-unused-vars
+  Line 114:21:  'votes' is assigned a value but never used  no-unused-vars
 
 Search for the keywords to learn more about each warning.
 To ignore, add // eslint-disable-next-line to the line before.
 
 WARNING in [eslint] 
+src/pages/AdminDashboard.js
+  Line 39:6:  React Hook useEffect has a missing dependency: 'fetchApps'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
 src/utils/applyContestSchema.js
   Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
   Line 20:15:  'data' is assigned a value but never used         no-unused-vars
   Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
 
+src/utils/validateContestSchema.js
+  Line 84:21:   'apps' is assigned a value but never used   no-unused-vars
+  Line 114:21:  'votes' is assigned a value but never used  no-unused-vars
+
 webpack compiled with 1 warning
 Compiling...
-Compiled with warnings.
+Failed to compile.
 
 [eslint] 
-src/utils/applyContestSchema.js
-  Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
-  Line 20:15:  'data' is assigned a value but never used         no-unused-vars
-  Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
+src/pages/Home.js
+  Line 25:26:  'getActiveWeek' is not defined  no-undef
+  Line 34:26:  'getActiveWeek' is not defined  no-undef
 
-Search for the keywords to learn more about each warning.
-To ignore, add // eslint-disable-next-line to the line before.
-
+Search for the keywords to learn more about each error.
 WARNING in [eslint] 
+src/pages/AdminDashboard.js
+  Line 39:6:  React Hook useEffect has a missing dependency: 'fetchApps'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Home.js
+  Line 34:6:  React Hook useEffect has an unnecessary dependency: 'getActiveWeek'. Either exclude it or remove the dependency array. Outer scope values like 'getActiveWeek' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
 src/utils/applyContestSchema.js
   Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
   Line 20:15:  'data' is assigned a value but never used         no-unused-vars
   Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
 
-webpack compiled with 1 warning
-Compiling...
-Compiled with warnings.
+src/utils/validateContestSchema.js
+  Line 84:21:   'apps' is assigned a value but never used   no-unused-vars
+  Line 114:21:  'votes' is assigned a value but never used  no-unused-vars
 
-[eslint] 
-src/utils/applyContestSchema.js
-  Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
-  Line 20:15:  'data' is assigned a value but never used         no-unused-vars
-  Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
+ERROR in [eslint] 
+src/pages/Home.js
+  Line 25:26:  'getActiveWeek' is not defined  no-undef
+  Line 34:26:  'getActiveWeek' is not defined  no-undef
 
-Search for the keywords to learn more about each warning.
-To ignore, add // eslint-disable-next-line to the line before.
+Search for the keywords to learn more about each error.
 
-WARNING in [eslint] 
-src/utils/applyContestSchema.js
-  Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
-  Line 20:15:  'data' is assigned a value but never used         no-unused-vars
-  Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
-
-webpack compiled with 1 warning
-Compiling...
-Compiled with warnings.
-
-[eslint] 
-src/utils/applyContestSchema.js
-  Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
-  Line 20:15:  'data' is assigned a value but never used         no-unused-vars
-  Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
-
-Search for the keywords to learn more about each warning.
-To ignore, add // eslint-disable-next-line to the line before.
-
-WARNING in [eslint] 
-src/utils/applyContestSchema.js
-  Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
-  Line 20:15:  'data' is assigned a value but never used         no-unused-vars
-  Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
-
-webpack compiled with 1 warning
-Compiling...
+webpack compiled with 1 error and 1 warning

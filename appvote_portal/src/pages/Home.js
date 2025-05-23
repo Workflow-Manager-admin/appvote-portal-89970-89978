@@ -21,9 +21,17 @@ const Home = () => {
   // Set initial selected week when context loads
   useEffect(() => {
     if (currentWeek) {
-      setSelectedWeekId(currentWeek.id);
+      // Always default to selecting the active week when a user is logged in
+      const activeWeek = getActiveWeek();
+      if (user && activeWeek) {
+        // If there's an active week, always prefer that one
+        setSelectedWeekId(activeWeek.id);
+      } else {
+        // Otherwise, use the current week from context
+        setSelectedWeekId(currentWeek.id);
+      }
     }
-  }, [currentWeek]);
+  }, [currentWeek, user, getActiveWeek]);
 
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
