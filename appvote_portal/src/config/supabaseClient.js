@@ -4,15 +4,35 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-// Check if environment variables are properly set
-if (!supabaseUrl || !supabaseKey) {
-  console.error('ERROR: Supabase environment variables are missing!');
-  console.error(`REACT_APP_SUPABASE_URL: ${supabaseUrl ? 'defined' : 'MISSING'}`);
-  console.error(`REACT_APP_SUPABASE_ANON_KEY: ${supabaseKey ? 'defined' : 'MISSING'}`);
-  console.error('Please check your .env file and ensure these variables are correctly set.');
+// Validate environment variables for Supabase connection
+const validateSupabaseEnv = () => {
+  const missing = [];
+  if (!supabaseUrl) missing.push('REACT_APP_SUPABASE_URL');
+  if (!supabaseKey) missing.push('REACT_APP_SUPABASE_ANON_KEY');
+  
+  if (missing.length > 0) {
+    console.error('🚨 ERROR: Missing Supabase environment variables:');
+    missing.forEach(variable => console.error(`   - ${variable} is not defined`));
+    console.error('\nPlease check your .env file and ensure these variables are correctly set.');
+    console.error('Environment Variables Reference:');
+    console.error('  REACT_APP_SUPABASE_URL=your_project_url');
+    console.error('  REACT_APP_SUPABASE_ANON_KEY=your_anon_key');
+    
+    // Only log a truncated version of values if they exist (for debugging)
+    if (supabaseUrl) console.log(`REACT_APP_SUPABASE_URL starts with: ${supabaseUrl.substring(0, 10)}...`);
+    if (supabaseKey) console.log(`REACT_APP_SUPABASE_ANON_KEY exists but may be incorrect`);
+    
+    return false;
+  }
+  return true;
+};
+
+// Validate environment variables and log connection info
+const isValid = validateSupabaseEnv();
+if (isValid) {
+  console.log(`Connecting to Supabase project: ${supabaseUrl}`);
 }
 
-console.log(`Connecting to Supabase project: ${supabaseUrl}`);
 // Initialize the Supabase client with strict environment variables (no fallbacks)
 const supabase = createClient(supabaseUrl, supabaseKey);
 
