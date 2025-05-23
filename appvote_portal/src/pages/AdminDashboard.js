@@ -177,17 +177,143 @@ const AdminDashboard = () => {
     );
   }
 
+  // Handle changing the selected week
+  const handleWeekChange = (weekId) => {
+    setSelectedWeekId(Number(weekId));
+    switchWeek(Number(weekId));
+    fetchApps(Number(weekId));
+  };
+
+  // Handle contest status changes
+  const handleStatusChange = async (weekId, newStatus) => {
+    const success = await updateContestStatus(weekId, newStatus);
+    if (success) {
+      fetchApps(weekId);
+    }
+  };
+
+  // Handle winner selection
+  const handleSelectWinner = async (appId, position) => {
+    await selectWinner(selectedWeekId, appId, position);
+  };
+
+  // Get current week status
+  const getCurrentWeekStatus = () => {
+    const week = contestWeeks.find(w => w.id === selectedWeekId);
+    return week ? week.status : 'unknown';
+  };
+
   return (
     <div className="container admin-page">
       <h1 className="page-title">Admin Dashboard</h1>
-      <div className="admin-actions">
-        <button className="btn btn-share" onClick={generateShareableLink}>
-          Share Top 10
+
+      {/* Admin dashboard tabs */}
+      <div className="admin-tabs">
+        <button 
+          className={`admin-tab ${selectedTab === 'apps' ? 'active' : ''}`}
+          onClick={() => setSelectedTab('apps')}
+        >
+          App Submissions
         </button>
-        <button className="btn btn-export" onClick={exportToCsv}>
-          Export Data (CSV)
+        <button 
+          className={`admin-tab ${selectedTab === 'contest' ? 'active' : ''}`}
+          onClick={() => setSelectedTab('contest')}
+        >
+          Contest Management
         </button>
       </div>
+
+      {/* Contest weeks tabs */}
+      <div className="contest-tabs admin-contest-tabs">
+        {contestWeeks.map(week => (
+          <button 
+            key={week.id}
+            className={`contest-tab ${selectedWeekId === week.id ? 'active' : ''} ${week.status}`}
+            onClick={() => handleWeekChange(week.id)}
+          >
+            {week.name}
+            <span className={`tab-badge ${week.status}`}>
+              {week.status === 'active' ? 'Active' : 
+               week.status === 'ended' ? 'Ended' : 
+               week.status === 'completed' ? 'Completed' : 'Upcoming'}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {selectedTab === 'apps' && (
+        <>
+          <div className="admin-actions">
+            <button className="btn btn-share" onClick={generateShareableLink}>
+              Share Top 10
+            </button>
+            <button className="btn btn-export" onClick={exportToCsv}>
+              Export Data (CSV)
+            </button>
+          </div>
+        </>
+      )}
+
+      {selectedTab === 'contest' && (
+        <div className="contest-management">
+          <div className="contest-status-controls">
+            <h3>Contest Controls for {contestWeeks.find(w => w.id === selectedWeekId)?.name}</h3>
+            <div className="status-buttons">
+              <button 
+                className="btn btn-start"
+                disabled={getCurrentWeekStatus() === 'active' || getCurrentWeekStatus() === 'completed'}
+                onClick={() => handleStatusChange(selectedWeekId, 'active')}
+              >
+                Start Contest
+              </button>
+              <button 
+                className="btn btn-end"
+                disabled={getCurrentWeekStatus() !== 'active'}
+                onClick={() => handleStatusChange(selectedWeekId, 'ended')}
+              >
+                End Contest
+              </button>
+            </div>
+          </div>
+
+          {getCurrentWeekStatus() === 'ended' && (
+            <div className="winner-selection">
+              <h3>Select Winners</h3>
+              <p>Choose the top 3 winners from the list below:</p>
+              
+              <div className="winner-positions">
+                {[1, 2, 3].map(position => {
+                  // Check if winner already selected for this position
+                  const existingWinner = getWinnersForWeek(selectedWeekId)?.find(w => w.position === position);
+                  
+                  return (
+                    <div className="winner-position" key={position}>
+                      <h4>{position === 1 ? '1st Place 🥇' : position === 2 ? '2nd Place 🥈' : '3rd Place 🥉'}</h4>
+                      <select 
+                        value={existingWinner?.app_id || ''}
+                        onChange={(e) => handleSelectWinner(e.target.value, position)}
+                      >
+                        <option value="">-- Select Winner --</option>
+                        {/* Show top 10 apps by votes */}
+                        {apps.slice(0, 10).map(app => (
+                          <option key={app.id} value={app.id}>
+                            {app.rank}. {app.name} ({app.votes} votes) - by {app.username}
+                          </option>
+                        ))}
+                      </select>
+                      {existingWinner && (
+                        <div className="selected-winner">
+                          Selected: {apps.find(a => a.id === existingWinner.app_id)?.name || 'Unknown app'}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {apps.length === 0 ? (
         <div className="no-apps-message">
