@@ -1,4 +1,4 @@
-# AppVote Portal
+# Kavia AI App Contest
 
 A stylish web application for submitting and voting on apps, built with React and Supabase.
 
