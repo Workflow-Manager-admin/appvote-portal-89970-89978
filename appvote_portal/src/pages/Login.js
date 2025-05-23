@@ -43,7 +43,7 @@ const Login = () => {
       <div className="auth-box">
         <div className="auth-header">
           <Link to="/" className="logo logo-auth">
-            <span className="logo-symbol">*</span> AppVote Portal
+            <span className="logo-symbol">*</span> Kavia AI App Contest
           </Link>
           <h2 className="auth-title">Sign In</h2>
         </div>
