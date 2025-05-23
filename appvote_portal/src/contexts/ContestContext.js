@@ -298,9 +298,26 @@ export function ContestProvider({ children }) {
     return contestWeeks;
   };
 
-  // Get active contest week
+  // Get active contest week or most appropriate week as fallback
   const getActiveWeek = () => {
-    return contestWeeks.find(week => week.status === 'active') || null;
+    const activeWeek = contestWeeks.find(week => week.status === 'active');
+    if (activeWeek) return activeWeek;
+    
+    // If no active week, find next best option in this priority:
+    // 1. Next upcoming week
+    // 2. Most recently ended week
+    // 3. First week in the list
+    const upcomingWeek = contestWeeks.find(week => week.status === 'upcoming');
+    if (upcomingWeek) return upcomingWeek;
+    
+    const endedWeeks = contestWeeks.filter(week => week.status === 'ended' || week.status === 'completed');
+    const mostRecentEndedWeek = endedWeeks?.length 
+      ? endedWeeks.sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0]
+      : null;
+    
+    if (mostRecentEndedWeek) return mostRecentEndedWeek;
+    
+    return contestWeeks.length > 0 ? contestWeeks[0] : null;
   };
 
   // Check if we have valid contest data structure
