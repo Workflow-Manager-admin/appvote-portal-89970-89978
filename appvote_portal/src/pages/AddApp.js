@@ -12,7 +12,7 @@ const AddApp = () => {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const { user } = useAuth();
-  const { currentWeek, canSubmitApps } = useContest();
+  const { currentWeek, canSubmitApps, hasValidContestStructure } = useContest();
   const navigate = useNavigate();
 
   const handleImageChange = (e) => {
@@ -91,7 +91,7 @@ const AddApp = () => {
         }
       }
 
-      // Save app data to database with contest week ID
+      // Save app data to database, include contest_week_id if schema supports it
       const { error: appError } = await supabase
         .from('apps')
         .insert([
@@ -100,7 +100,7 @@ const AddApp = () => {
             link,
             image_url: imageUrl,
             user_id: user.id,
-            contest_week_id: currentWeek.id
+            ...(hasValidContestStructure && currentWeek ? { contest_week_id: currentWeek.id } : {})
           }
         ]);
 

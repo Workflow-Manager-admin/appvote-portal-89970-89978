@@ -197,36 +197,40 @@ const Home = () => {
     <div className="container home-page">
       <h1 className="page-title">App Showcase</h1>
       
-      {/* Contest week selection tabs */}
-      <div className="contest-tabs">
-        {allWeeks.map(week => (
-          <button 
-            key={week.id}
-            className={`contest-tab ${selectedWeekId === week.id ? 'active' : ''} ${week.status}`}
-            onClick={() => handleWeekChange(week.id)}
-          >
-            {week.name}
-            <span className={`tab-badge ${week.status}`}>
-              {week.status === 'active' ? 'Active' : 
-               week.status === 'ended' ? 'Ended' : 
-               week.status === 'completed' ? 'Completed' : 'Upcoming'}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Contest week selection tabs - only show if contest structure exists */}
+      {hasValidContestStructure && (
+        <>
+          <div className="contest-tabs">
+            {allWeeks.map(week => (
+              <button 
+                key={week.id}
+                className={`contest-tab ${selectedWeekId === week.id ? 'active' : ''} ${week.status}`}
+                onClick={() => handleWeekChange(week.id)}
+              >
+                {week.name}
+                <span className={`tab-badge ${week.status}`}>
+                  {week.status === 'active' ? 'Active' : 
+                   week.status === 'ended' ? 'Ended' : 
+                   week.status === 'completed' ? 'Completed' : 'Upcoming'}
+                </span>
+              </button>
+            ))}
+          </div>
 
-      {/* Contest status message */}
-      <div className={`contest-status-banner ${currentWeek?.status}`}>
-        {currentWeek?.status === 'active' ? (
-          <>Contest is active! Submit your app and vote for your favorites.</>
-        ) : currentWeek?.status === 'ended' ? (
-          <>This contest has ended. Winners will be announced soon.</>
-        ) : currentWeek?.status === 'completed' ? (
-          <>This contest is complete. Check out the winners in the Contest Winners tab.</>
-        ) : (
-          <>This contest hasn't started yet.</>
-        )}
-      </div>
+          {/* Contest status message */}
+          <div className={`contest-status-banner ${currentWeek?.status}`}>
+            {currentWeek?.status === 'active' ? (
+              <>Contest is active! Submit your app and vote for your favorites.</>
+            ) : currentWeek?.status === 'ended' ? (
+              <>This contest has ended. Winners will be announced soon.</>
+            ) : currentWeek?.status === 'completed' ? (
+              <>This contest is complete. Check out the winners in the Contest Winners tab.</>
+            ) : (
+              <>This contest hasn't started yet.</>
+            )}
+          </div>
+        </>
+      )}
 
       <p className="page-description">
         Discover and vote for your favorite apps. You can vote for up to 5 apps.
