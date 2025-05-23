@@ -12,6 +12,12 @@
   --input-bg: #f0f2f5;
   --error-color: #ff4d4d;
   --success-color: #4CAF50;
+  --warning-color: #FF9800;
+  --info-color: #2196F3;
+  --active-color: #4CAF50;
+  --ended-color: #FF9800;
+  --completed-color: #2196F3;
+  --upcoming-color: #9E9E9E;
 }
 
 body {
