@@ -304,7 +304,8 @@ export function ContestProvider({ children }) {
   };
 
   // Check if we have valid contest data structure
-  const hasValidContestStructure = contestWeeks && contestWeeks.length > 0;
+  // More comprehensive check to confirm schema is properly set up
+  const hasValidContestStructure = contestWeeks && contestWeeks.length > 0 && !loading;
 
   const value = {
     loading,
