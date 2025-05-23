@@ -55,6 +55,8 @@ const Home = () => {
   }, [user]);
 
   const fetchApps = useCallback(async () => {
+    if (!selectedWeekId) return;
+    
     try {
       const { data, error } = await supabase
         .from('apps')
@@ -65,8 +67,10 @@ const Home = () => {
           image_url, 
           created_at,
           user_id,
+          contest_week_id,
           profiles:user_id (username, registration_number)
         `)
+        .eq('contest_week_id', selectedWeekId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -77,13 +81,16 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedWeekId]);
 
   useEffect(() => {
-    fetchApps();
-    fetchUserVotes();
-    fetchUserProfile();
-  }, [fetchApps, fetchUserVotes, fetchUserProfile]);
+    if (selectedWeekId) {
+      setLoading(true);
+      fetchApps();
+      fetchUserVotes();
+      fetchUserProfile();
+    }
+  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId]);
 
   const handleVote = async (appId) => {
     if (!user) {
