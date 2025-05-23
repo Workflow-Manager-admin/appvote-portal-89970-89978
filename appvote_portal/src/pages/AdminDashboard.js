@@ -95,7 +95,7 @@ const AdminDashboard = () => {
           created_at: app.created_at,
           username: profile?.username || 'Unknown',
           // Use username as a basis for a placeholder email
-          email: `${profile?.username || 'user'}@appvote.example`, // Placeholder email
+          email: `${profile?.username || 'user'}@kavia-app-contest.example`, // Placeholder email
           registration_number: profile?.registration_number || 'N/A',
           votes: voteCount
         };
