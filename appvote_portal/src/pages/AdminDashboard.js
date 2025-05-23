@@ -128,7 +128,7 @@ const AdminDashboard = () => {
     ).join('\n');
 
     // Create a formatted text for sharing
-    const shareText = `📱 Top 10 Apps from AppVote Portal 📱\n\n${content}\n\nShared from AppVote Portal`;
+    const shareText = `📱 Top 10 Apps from Kavia AI App Contest 📱\n\n${content}\n\nShared from Kavia AI App Contest`;
 
     // For a real app, you might want to create a sharable page instead
     // For this demo, we'll just create a text that can be copied
