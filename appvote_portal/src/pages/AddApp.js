@@ -42,6 +42,12 @@ const AddApp = () => {
       return;
     }
 
+    // Check if app submission is allowed (contest is active)
+    if (!canSubmitApps() || !currentWeek) {
+      toast.error('Apps can only be submitted during active contests');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -85,7 +91,7 @@ const AddApp = () => {
         }
       }
 
-      // Save app data to database
+      // Save app data to database with contest week ID
       const { error: appError } = await supabase
         .from('apps')
         .insert([
@@ -93,7 +99,8 @@ const AddApp = () => {
             name,
             link,
             image_url: imageUrl,
-            user_id: user.id
+            user_id: user.id,
+            contest_week_id: currentWeek.id
           }
         ]);
 
