@@ -32,6 +32,9 @@ const AdminDashboard = () => {
     if (currentWeek) {
       setSelectedWeekId(currentWeek.id);
       fetchApps(currentWeek.id);
+    } else {
+      // If no contest structure, fetch all apps
+      fetchApps(null);
     }
   }, [isAdmin, currentWeek]);
 
