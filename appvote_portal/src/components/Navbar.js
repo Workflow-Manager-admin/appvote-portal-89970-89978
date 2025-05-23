@@ -23,7 +23,7 @@ const Navbar = () => {
       <div className="container">
         <div className="navbar-content">
           <Link to="/" className="logo">
-            <span className="logo-symbol">*</span> AppVote Portal
+            <span className="logo-symbol">*</span> Kavia AI App Contest
           </Link>
           
           {user && (

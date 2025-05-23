@@ -13,7 +13,7 @@ function App() {
   // Initialize Supabase storage buckets and contest schema when the app starts
   useEffect(() => {
     const initializeApp = async () => {
-      console.log('Initializing AppVote Portal...');
+      console.log('Initializing Kavia AI App Contest...');
       
       // Initialize storage first
       await initializeStorage();
