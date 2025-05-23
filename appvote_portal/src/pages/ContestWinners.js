@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useContest } from '../contexts/ContestContext';
 import { getImageUrl } from '../config/supabaseClient';
 
