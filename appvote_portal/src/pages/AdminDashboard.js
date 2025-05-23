@@ -7,10 +7,20 @@ import ImageRepairTool from '../utils/ImageRepairTool';
 
 const AdminDashboard = () => {
   const { isAdmin } = useAuth();
+  const { 
+    contestWeeks, 
+    currentWeek, 
+    switchWeek, 
+    updateContestStatus,
+    selectWinner,
+    getWinnersForWeek
+  } = useContest();
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [shareUrl, setShareUrl] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('apps');
+  const [selectedWeekId, setSelectedWeekId] = useState(null);
 
   useEffect(() => {
     if (!isAdmin()) {
