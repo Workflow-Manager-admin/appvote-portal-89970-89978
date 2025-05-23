@@ -23,7 +23,8 @@ const AdminDashboard = () => {
   const fetchApps = async () => {
     try {
       // Get all apps with their vote counts and user information
-      const { data, error } = await supabase
+      // First, fetch apps with vote counts
+      const { data: appsData, error: appsError } = await supabase
         .from('apps')
         .select(`
           id,
@@ -32,16 +33,45 @@ const AdminDashboard = () => {
           image_url,
           user_id,
           created_at,
-          profiles:user_id (username, email, registration_number),
           votes:votes (count)
         `);
 
-      if (error) throw error;
+      if (appsError) throw appsError;
+
+      // Then fetch user profiles separately to get the complete profile data
+      const userIds = appsData.map(app => app.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, registration_number')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a profiles lookup map for easy access
+      const profilesMap = {};
+      profilesData.forEach(profile => {
+        profilesMap[profile.id] = profile;
+      });
+
+      // Get user email from auth.users via their profiles
+      const { data: usersData, error: usersError } = await supabase
+        .from('auth.users') // Getting emails from auth.users
+        .select('id, email')
+        .in('id', userIds);
+        
+      // Create an emails lookup map
+      const emailsMap = {};
+      if (usersData && !usersError) {
+        usersData.forEach(user => {
+          emailsMap[user.id] = user.email;
+        });
+      }
 
       // Process the data to count votes and format for display
-      const processedApps = data.map(app => {
+      const processedApps = appsData.map(app => {
         // Count votes for each app
         const voteCount = app.votes ? app.votes.length : 0;
+        const profile = profilesMap[app.user_id] || {};
         
         return {
           id: app.id,
@@ -50,9 +80,9 @@ const AdminDashboard = () => {
           image_url: app.image_url,
           user_id: app.user_id,
           created_at: app.created_at,
-          username: app.profiles?.username || 'Unknown',
-          email: app.profiles?.email || 'No email',
-          registration_number: app.profiles?.registration_number || 'N/A',
+          username: profile?.username || 'Unknown',
+          email: emailsMap[app.user_id] || 'No email',
+          registration_number: profile?.registration_number || 'N/A',
           votes: voteCount
         };
       });
