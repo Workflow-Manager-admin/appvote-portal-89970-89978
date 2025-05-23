@@ -36,7 +36,7 @@ const AdminDashboard = () => {
 
   const fetchApps = async (weekId = selectedWeekId) => {
     try {
-      // Get all apps with their vote counts and user information
+      // Get all apps with their vote counts and user information for the selected week
       // First, fetch apps with vote counts
       const { data: appsData, error: appsError } = await supabase
         .from('apps')
@@ -47,8 +47,11 @@ const AdminDashboard = () => {
           image_url,
           user_id,
           created_at,
-          votes:votes (count)
-        `);
+          contest_week_id,
+          votes:votes!inner (count)
+        `)
+        .eq('contest_week_id', weekId)
+        .eq('votes.contest_week_id', weekId);
 
       if (appsError) throw appsError;
 
