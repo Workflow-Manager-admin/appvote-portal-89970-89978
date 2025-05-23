@@ -40,9 +40,7 @@ const AdminDashboard = () => {
 
   const fetchApps = async (weekId = selectedWeekId) => {
     try {
-      // Get all apps with their vote counts and user information for the selected week
-      // First, fetch apps with vote counts
-      const { data: appsData, error: appsError } = await supabase
+      let query = supabase
         .from('apps')
         .select(`
           id,
@@ -52,10 +50,18 @@ const AdminDashboard = () => {
           user_id,
           created_at,
           contest_week_id,
-          votes:votes!inner (count)
-        `)
-        .eq('contest_week_id', weekId)
-        .eq('votes.contest_week_id', weekId);
+          votes:votes (count)
+        `);
+
+      // If contest schema exists and week is selected, filter by week
+      if (hasValidContestStructure && weekId) {
+        query = query
+          .eq('contest_week_id', weekId)
+          .eq('votes.contest_week_id', weekId);
+      }
+
+      // Execute query
+      const { data: appsData, error: appsError } = await query;
 
       if (appsError) throw appsError;
 
