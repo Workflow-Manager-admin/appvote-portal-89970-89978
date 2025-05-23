@@ -231,8 +231,16 @@ const Home = () => {
 
       {apps.length === 0 ? (
         <div className="no-apps-message">
-          <p>No apps have been submitted yet.</p>
-          <p>Be the first to <a href="/add-app">add your app</a>!</p>
+          <p>No apps have been submitted for {currentWeek?.name || 'this week'}.</p>
+          {currentWeek?.status === 'active' ? (
+            <p>Be the first to <a href="/add-app">add your app</a>!</p>
+          ) : (
+            <p>
+              {currentWeek?.status === 'upcoming' 
+                ? "This contest hasn't started yet." 
+                : "This contest has ended."}
+            </p>
+          )}
         </div>
       ) : (
         <div className="app-grid">
