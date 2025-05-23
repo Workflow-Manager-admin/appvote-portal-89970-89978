@@ -217,7 +217,7 @@ const AdminDashboard = () => {
     <div className="container admin-page">
       <h1 className="page-title">Admin Dashboard</h1>
 
-      {/* Admin dashboard tabs */}
+      {/* Admin dashboard tabs - only show contest tab if schema exists */}
       <div className="admin-tabs">
         <button 
           className={`admin-tab ${selectedTab === 'apps' ? 'active' : ''}`}
@@ -225,31 +225,42 @@ const AdminDashboard = () => {
         >
           App Submissions
         </button>
-        <button 
-          className={`admin-tab ${selectedTab === 'contest' ? 'active' : ''}`}
-          onClick={() => setSelectedTab('contest')}
-        >
-          Contest Management
-        </button>
+        {hasValidContestStructure && (
+          <button 
+            className={`admin-tab ${selectedTab === 'contest' ? 'active' : ''}`}
+            onClick={() => setSelectedTab('contest')}
+          >
+            Contest Management
+          </button>
+        )}
       </div>
 
-      {/* Contest weeks tabs */}
-      <div className="contest-tabs admin-contest-tabs">
-        {contestWeeks.map(week => (
-          <button 
-            key={week.id}
-            className={`contest-tab ${selectedWeekId === week.id ? 'active' : ''} ${week.status}`}
-            onClick={() => handleWeekChange(week.id)}
-          >
-            {week.name}
-            <span className={`tab-badge ${week.status}`}>
-              {week.status === 'active' ? 'Active' : 
-               week.status === 'ended' ? 'Ended' : 
-               week.status === 'completed' ? 'Completed' : 'Upcoming'}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Contest weeks tabs - only show if schema exists */}
+      {hasValidContestStructure && (
+        <div className="contest-tabs admin-contest-tabs">
+          {contestWeeks.map(week => (
+            <button 
+              key={week.id}
+              className={`contest-tab ${selectedWeekId === week.id ? 'active' : ''} ${week.status}`}
+              onClick={() => handleWeekChange(week.id)}
+            >
+              {week.name}
+              <span className={`tab-badge ${week.status}`}>
+                {week.status === 'active' ? 'Active' : 
+                week.status === 'ended' ? 'Ended' : 
+                week.status === 'completed' ? 'Completed' : 'Upcoming'}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* If contest schema doesn't exist, show warning message */}
+      {!hasValidContestStructure && (
+        <div className="contest-status-banner upcoming" style={{ marginBottom: '25px' }}>
+          Contest feature requires database setup. Please ask an administrator to apply the contest schema.
+        </div>
+      )}
 
       {selectedTab === 'apps' && (
         <>

@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
-  const { contestWeeks } = useContest();
+  const { contestWeeks, hasValidContestStructure } = useContest();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
