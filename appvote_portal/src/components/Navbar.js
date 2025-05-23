@@ -30,7 +30,9 @@ const Navbar = () => {
             <div className="nav-links">
               <Link to="/" className="nav-link">Home</Link>
               <Link to="/add-app" className="nav-link">Add Your App</Link>
-              <Link to="/contest-winners" className="nav-link">Contest Winners</Link>
+              {hasValidContestStructure && (
+                <Link to="/contest-winners" className="nav-link">Contest Winners</Link>
+              )}
               {isAdmin() && (
                 <Link to="/admin" className="nav-link admin-link">Admin Dashboard</Link>
               )}
