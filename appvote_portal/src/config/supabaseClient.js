@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Get environment variables for Supabase connection
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL||'https://pelbbqqpirakcqftkmoh.supabase.co';
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbGJicXFwaXJha2NxZnRrbW9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NDQ1MzMsImV4cCI6MjA2MzIyMDUzM30.9rdZP4jh9ahB2nKjZMUeWI3Ep4ZxZiCCiBkajaRizeg';
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 // Validate environment variables for Supabase connection
 const validateSupabaseEnv = () => {
@@ -11,34 +11,38 @@ const validateSupabaseEnv = () => {
   if (!supabaseKey) missing.push('REACT_APP_SUPABASE_ANON_KEY');
   
   if (missing.length > 0) {
-    console.error('🚨 ERROR: Missing Supabase environment variables:');
-    missing.forEach(variable => console.error(`   - ${variable} is not defined`));
-    console.error('\nPlease check your .env file and ensure these variables are correctly set.');
-    console.error('Environment Variables Reference:');
-    console.error('  REACT_APP_SUPABASE_URL=your_project_url');
-    console.error('  REACT_APP_SUPABASE_ANON_KEY=your_anon_key');
+    const errorMessage = `🚨 ERROR: Missing Supabase environment variables:
+    ${missing.map(variable => `- ${variable} is not defined`).join('\n    ')}
     
-    // Only log a truncated version of values if they exist (for debugging)
-    if (supabaseUrl) console.log(`REACT_APP_SUPABASE_URL starts with: ${supabaseUrl.substring(0, 10)}...`);
-    if (supabaseKey) console.log(`REACT_APP_SUPABASE_ANON_KEY exists but may be incorrect`);
+Please check your .env file and ensure these variables are correctly set.
+Environment Variables Reference:
+  REACT_APP_SUPABASE_URL=your_project_url
+  REACT_APP_SUPABASE_ANON_KEY=your_anon_key`;
     
-    return false;
+    // Log the error for debugging
+    console.error(errorMessage);
+    
+    // Throw an error to prevent app from continuing with invalid configuration
+    throw new Error(`Missing required Supabase environment variables: ${missing.join(', ')}`);
   }
   return true;
 };
 
-// Validate environment variables and log connection info
-const isValid = validateSupabaseEnv();
-if (isValid) {
+// Validate environment variables before proceeding
+try {
+  validateSupabaseEnv();
   console.log(`Connecting to Supabase project: ${supabaseUrl}`);
+} catch (error) {
+  // Error is already logged and thrown in validateSupabaseEnv
 }
 
-// Initialize the Supabase client with strict environment variables (no fallbacks)
+// Initialize the Supabase client with environment variables only (no fallbacks)
 let supabase;
 try {
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Cannot initialize Supabase client: missing environment variables');
   }
+  // Using process.env.REACT_APP_SUPABASE_ANON_KEY directly to ensure the exact spelling is used
   supabase = createClient(supabaseUrl, process.env.REACT_APP_SUPABASE_ANON_KEY);
 } catch (error) {
   console.error('Failed to initialize Supabase client:', error.message);
