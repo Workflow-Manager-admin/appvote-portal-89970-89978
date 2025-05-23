@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AddApp from './pages/AddApp';
 import AdminDashboard from './pages/AdminDashboard';
+import ContestWinners from './pages/ContestWinners';
 import DebugPage from './pages/DebugPage';
 
 const Router = () => {
@@ -69,6 +70,11 @@ const Router = () => {
             <AdminRoute>
               <AdminDashboard />
             </AdminRoute>
+          } />
+          <Route path="/contest-winners" element={
+            <ProtectedRoute>
+              <ContestWinners />
+            </ProtectedRoute>
           } />
           <Route path="/debug" element={
             <ProtectedRoute>
