@@ -98,6 +98,17 @@ const Home = () => {
       return;
     }
 
+    if (!selectedWeekId) {
+      toast.error('No contest week selected');
+      return;
+    }
+
+    // Check if voting is allowed based on contest state
+    if (!canVote()) {
+      toast.error('Voting is only allowed during active contests');
+      return;
+    }
+
     // Check if user has already voted for this app
     if (userVotes.includes(appId)) {
       try {
@@ -106,7 +117,8 @@ const Home = () => {
           .from('votes')
           .delete()
           .eq('user_id', user.id)
-          .eq('app_id', appId);
+          .eq('app_id', appId)
+          .eq('contest_week_id', selectedWeekId);
 
         if (error) throw error;
 
@@ -128,10 +140,14 @@ const Home = () => {
       }
 
       try {
-        // Add vote
+        // Add vote with contest week ID
         const { error } = await supabase
           .from('votes')
-          .insert([{ user_id: user.id, app_id: appId }]);
+          .insert([{ 
+            user_id: user.id, 
+            app_id: appId,
+            contest_week_id: selectedWeekId 
+          }]);
 
         if (error) throw error;
 
