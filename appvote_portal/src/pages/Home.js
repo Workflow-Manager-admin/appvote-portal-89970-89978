@@ -61,10 +61,8 @@ const Home = () => {
   }, [user]);
 
   const fetchApps = useCallback(async () => {
-    if (!selectedWeekId) return;
-    
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('apps')
         .select(`
           id, 
@@ -76,18 +74,47 @@ const Home = () => {
           contest_week_id,
           profiles:user_id (username, registration_number)
         `)
-        .eq('contest_week_id', selectedWeekId)
         .order('created_at', { ascending: false });
+      
+      // If we have a selected week and the contest structure is valid, filter by week
+      if (selectedWeekId && hasValidContestStructure) {
+        console.log(`Fetching apps for week ID: ${selectedWeekId}`);
+        query = query.eq('contest_week_id', selectedWeekId);
+      } else {
+        // If no week is selected or contest structure is invalid, fetch all apps
+        console.log('No week selected or invalid contest structure - fetching all apps');
+      }
 
-      if (error) throw error;
-      setApps(data || []);
+      const { data, error } = await query;
+
+      if (error) {
+        // Special handling for column does not exist error - likely schema issue
+        if (error.code === '42703') {
+          console.error('Column error when fetching apps - possible schema issue:', error.message);
+          // Try again without the contest_week_id filter
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('apps')
+            .select(`id, name, link, image_url, created_at, user_id, profiles:user_id (username, registration_number)`)
+            .order('created_at', { ascending: false });
+            
+          if (fallbackError) {
+            throw fallbackError;
+          }
+          
+          setApps(fallbackData || []);
+        } else {
+          throw error;
+        }
+      } else {
+        setApps(data || []);
+      }
     } catch (error) {
       console.error('Error fetching apps:', error.message);
       toast.error('Failed to load apps');
     } finally {
       setLoading(false);
     }
-  }, [selectedWeekId]);
+  }, [selectedWeekId, hasValidContestStructure]);
 
   useEffect(() => {
     if (selectedWeekId) {
