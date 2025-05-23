@@ -583,10 +583,289 @@ body {
   text-decoration: underline;
 }
 
+/* Contest Styles */
+
+/* Contest Tabs */
+.contest-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.contest-tab {
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--card-bg);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.contest-tab.active {
+  border-color: var(--kavia-blue);
+  color: var(--kavia-blue);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.contest-tab.active {
+  background-color: rgba(25, 118, 210, 0.08);
+}
+
+.contest-tab.active {
+  font-weight: 600;
+}
+
+.tab-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 12px;
+  background-color: var(--kavia-light-bg);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tab-badge.active {
+  background-color: var(--active-color);
+  color: var(--text-light);
+}
+
+.tab-badge.ended {
+  background-color: var(--ended-color);
+  color: var(--text-light);
+}
+
+.tab-badge.completed {
+  background-color: var(--completed-color);
+  color: var(--text-light);
+}
+
+.tab-badge.upcoming {
+  background-color: var(--upcoming-color);
+  color: var(--text-light);
+}
+
+/* Contest Status Banner */
+.contest-status-banner {
+  margin-bottom: 24px;
+  padding: 14px 20px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.contest-status-banner.active {
+  background-color: rgba(76, 175, 80, 0.15);
+  color: var(--active-color);
+  border: 1px solid var(--active-color);
+}
+
+.contest-status-banner.ended {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: var(--ended-color);
+  border: 1px solid var(--ended-color);
+}
+
+.contest-status-banner.completed {
+  background-color: rgba(33, 150, 243, 0.15);
+  color: var(--completed-color);
+  border: 1px solid var(--completed-color);
+}
+
+.contest-status-banner.upcoming {
+  background-color: rgba(158, 158, 158, 0.15);
+  color: var(--upcoming-color);
+  border: 1px solid var(--upcoming-color);
+}
+
+/* Contest Winners Page */
+.contest-winners-page {
+  padding-top: 1.5rem;
+}
+
+.winners-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.winner-card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.winner-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.winner-position {
+  padding: 10px;
+  color: var(--text-color);
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0.03);
+  text-align: center;
+}
+
+.winner-card-content {
+  padding: 16px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.week-title {
+  font-size: 1.8rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+}
+
+.no-winners-message {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-secondary);
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Admin Dashboard Contest Management */
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-tab {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.admin-tab.active {
+  color: var(--kavia-blue);
+  border-bottom-color: var(--kavia-blue);
+}
+
+.admin-contest-tabs {
+  margin-bottom: 30px;
+}
+
+.contest-management {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.contest-status-controls {
+  margin-bottom: 24px;
+}
+
+.contest-status-controls h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.4rem;
+}
+
+.status-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-start {
+  background-color: var(--active-color);
+  border-color: var(--active-color);
+}
+
+.btn-end {
+  background-color: var(--ended-color);
+  border-color: var(--ended-color);
+}
+
+.winner-selection {
+  border-top: 1px solid var(--border-color);
+  padding-top: 24px;
+}
+
+.winner-selection h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.4rem;
+}
+
+.winner-positions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.winner-position {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.winner-position h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.winner-position select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+}
+
+.selected-winner {
+  margin-top: 10px;
+  font-weight: 600;
+  color: var(--kavia-blue);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-  .app-grid {
+  .app-grid,
+  .winners-grid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  
+  .contest-tabs,
+  .admin-tabs {
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  
+  .contest-tab,
+  .admin-tab {
+    padding: 8px 12px;
+    font-size: 0.9rem;
   }
   
   .nav-links {
@@ -608,6 +887,10 @@ body {
   .btn {
     padding: 8px 16px;
     font-size: 0.9rem;
+  }
+  
+  .winner-positions {
+    flex-direction: column;
   }
 }
 
