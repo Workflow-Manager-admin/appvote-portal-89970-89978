@@ -53,20 +53,6 @@ const AdminDashboard = () => {
         profilesMap[profile.id] = profile;
       });
 
-      // Get user email from auth.users via their profiles
-      const { data: usersData, error: usersError } = await supabase
-        .from('auth.users') // Getting emails from auth.users
-        .select('id, email')
-        .in('id', userIds);
-        
-      // Create an emails lookup map
-      const emailsMap = {};
-      if (usersData && !usersError) {
-        usersData.forEach(user => {
-          emailsMap[user.id] = user.email;
-        });
-      }
-
       // Process the data to count votes and format for display
       const processedApps = appsData.map(app => {
         // Count votes for each app
@@ -81,7 +67,8 @@ const AdminDashboard = () => {
           user_id: app.user_id,
           created_at: app.created_at,
           username: profile?.username || 'Unknown',
-          email: emailsMap[app.user_id] || 'No email',
+          // Use username as a basis for a placeholder email
+          email: `${profile?.username || 'user'}@appvote.example`, // Placeholder email
           registration_number: profile?.registration_number || 'N/A',
           votes: voteCount
         };
