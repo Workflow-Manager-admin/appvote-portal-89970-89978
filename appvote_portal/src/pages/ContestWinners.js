@@ -18,24 +18,32 @@ const ContestWinners = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Find first week with winners to set as default active tab
+  // Redirect if contest schema doesn't exist or check for winners
   useEffect(() => {
-    if (!contestLoading && contestWeeks?.length > 0) {
-      // Find the first week with winners or set to the first week
-      const weeksWithWinners = contestWeeks.filter(week => {
-        const weekWinners = getWinnersForWeek(week.id);
-        return weekWinners && weekWinners.length > 0;
-      });
-
-      if (weeksWithWinners.length > 0) {
-        setActiveTab(weeksWithWinners[0].id);
-      } else {
-        // Fallback to the first week
-        setActiveTab(contestWeeks[0].id);
+    if (!contestLoading) {
+      if (!hasValidContestStructure) {
+        // Redirect to home page if contest feature is not set up
+        navigate('/');
+        return;
       }
-      setLoading(false);
+      
+      if (contestWeeks?.length > 0) {
+        // Find the first week with winners or set to the first week
+        const weeksWithWinners = contestWeeks.filter(week => {
+          const weekWinners = getWinnersForWeek(week.id);
+          return weekWinners && weekWinners.length > 0;
+        });
+
+        if (weeksWithWinners.length > 0) {
+          setActiveTab(weeksWithWinners[0].id);
+        } else {
+          // Fallback to the first week
+          setActiveTab(contestWeeks[0].id);
+        }
+        setLoading(false);
+      }
     }
-  }, [contestLoading, contestWeeks, getWinnersForWeek]);
+  }, [contestLoading, contestWeeks, getWinnersForWeek, hasValidContestStructure, navigate]);
 
   // Positions and medal colors for winners
   const positions = {
