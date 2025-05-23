@@ -114,15 +114,13 @@ const Home = () => {
   }, [selectedWeekId]);
 
   useEffect(() => {
-    // If contest structure is valid, wait for selectedWeekId
-    // If not valid, load data anyway without week dependency
-    if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
-      setLoading(true);
+    // Only load data when we have a selectedWeekId
+    if (selectedWeekId) {
       fetchApps();
       fetchUserVotes();
       fetchUserProfile();
     }
-  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user]);
+  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, user]);
 
   const handleVote = async (appId) => {
     if (!user) {
