@@ -7,9 +7,10 @@ import applyContestSchema from './utils/applyContestSchema';
 import './App.css';
 
 function App() {
-  // Initialize Supabase storage buckets when the app starts
+  // Initialize Supabase storage buckets and contest schema when the app starts
   useEffect(() => {
     initializeStorage();
+    applyContestSchema();
   }, []);
 
   return (
