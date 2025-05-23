@@ -6,7 +6,13 @@ import supabase, { getImageUrl } from '../config/supabaseClient';
 
 const Home = () => {
   const { user, isAdmin } = useAuth();
-  const { currentWeek, canVote, getAllWeeks, switchWeek } = useContest();
+  const { 
+    currentWeek, 
+    canVote, 
+    getAllWeeks, 
+    switchWeek, 
+    hasValidContestStructure 
+  } = useContest();
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -303,6 +303,9 @@ export function ContestProvider({ children }) {
     return contestWeeks.find(week => week.status === 'active') || null;
   };
 
+  // Check if we have valid contest data structure
+  const hasValidContestStructure = contestWeeks && contestWeeks.length > 0;
+
   const value = {
     loading,
     contestWeeks,
@@ -311,11 +314,13 @@ export function ContestProvider({ children }) {
     switchWeek,
     updateContestStatus,
     selectWinner,
-    canSubmitApps,
-    canVote,
+    // Only allow submissions/votes if valid contest structure exists
+    canSubmitApps: () => hasValidContestStructure && canSubmitApps(),
+    canVote: () => hasValidContestStructure && canVote(),
     getWinnersForWeek,
     getAllWeeks,
     getActiveWeek,
+    hasValidContestStructure,
   };
 
   return (
