@@ -121,6 +121,18 @@ const AddApp = () => {
   return (
     <div className="container add-app-page">
       <h1 className="page-title">Add Your App</h1>
+      
+      {/* Contest status message */}
+      {currentWeek && (
+        <div className={`contest-status-banner ${currentWeek.status}`}>
+          {currentWeek.status === 'active' ? (
+            <>Contest is active! Submit your app for {currentWeek.name}.</>
+          ) : (
+            <>App submissions are currently closed. Please wait for an active contest.</>
+          )}
+        </div>
+      )}
+      
       <div className="add-app-form-container">
         <form onSubmit={handleSubmit(onSubmit)} className="add-app-form">
           <div className="form-group">
