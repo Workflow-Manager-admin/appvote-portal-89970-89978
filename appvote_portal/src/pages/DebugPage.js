@@ -168,6 +168,11 @@ const DebugPage = () => {
         )}
       </div>
       
+      <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
+        <h2>Contest Schema Debugger</h2>
+        <ContestSchemaDebugger />
+      </div>
+      
       {/* Advanced image debugger component */}
       <ImageDebugger />
     </div>
