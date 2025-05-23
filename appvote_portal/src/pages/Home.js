@@ -171,7 +171,7 @@ const Home = () => {
       fetchUserVotes();
       fetchUserProfile();
     }
-  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure]);
+  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user]);
 
   const handleVote = async (appId) => {
     if (!user) {
