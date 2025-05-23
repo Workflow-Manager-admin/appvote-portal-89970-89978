@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
+import { ContestProvider } from './contexts/ContestContext';
 import Router from './Router';
 import { initializeStorage } from './config/supabaseClient';
 import './App.css';
@@ -12,7 +13,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router />
+      <ContestProvider>
+        <Router />
+      </ContestProvider>
     </AuthProvider>
   );
 }
