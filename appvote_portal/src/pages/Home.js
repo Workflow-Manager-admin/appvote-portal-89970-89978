@@ -22,13 +22,14 @@ const Home = () => {
   // Set initial selected week when context loads
   useEffect(() => {
     if (currentWeek) {
-      // Always default to selecting the active week when a user is logged in
-      const activeWeek = getActiveWeek();
-      if (user && activeWeek) {
-        // If there's an active week, always prefer that one
-        setSelectedWeekId(activeWeek.id);
+      if (user) {
+        // When user is logged in, always try to use a valid week with this priority:
+        // 1. Active week
+        // 2. Current week from context
+        const activeWeek = getActiveWeek();
+        setSelectedWeekId(activeWeek ? activeWeek.id : currentWeek.id);
       } else {
-        // Otherwise, use the current week from context
+        // For non-logged in users, use the current week from context
         setSelectedWeekId(currentWeek.id);
       }
     }
