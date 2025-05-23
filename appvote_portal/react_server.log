@@ -97,3 +97,4 @@ src/utils/applyContestSchema.js
   Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
 
 webpack compiled with 1 warning
+Compiling...

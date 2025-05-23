@@ -201,16 +201,37 @@ const Home = () => {
       }
 
       try {
-        // Add vote with contest week ID
+        // Add vote with or without contest week ID based on schema support
+        const voteData = { 
+          user_id: user.id, 
+          app_id: appId
+        };
+        
+        // Only include contest_week_id if the schema supports it
+        if (hasValidContestStructure && selectedWeekId) {
+          voteData.contest_week_id = selectedWeekId;
+        }
+        
         const { error } = await supabase
           .from('votes')
-          .insert([{ 
-            user_id: user.id, 
-            app_id: appId,
-            contest_week_id: selectedWeekId 
-          }]);
+          .insert([voteData]);
 
-        if (error) throw error;
+        if (error) {
+          // If the error is related to missing contest_week_id column, try without it
+          if (error.code === '42703' && error.message.includes('contest_week_id')) {
+            console.warn('Column error when adding vote - attempting without contest_week_id');
+            const { error: fallbackError } = await supabase
+              .from('votes')
+              .insert([{ 
+                user_id: user.id, 
+                app_id: appId
+              }]);
+              
+            if (fallbackError) throw fallbackError;
+          } else {
+            throw error;
+          }
+        }
 
         // Update local state
         setUserVotes([...userVotes, appId]);
