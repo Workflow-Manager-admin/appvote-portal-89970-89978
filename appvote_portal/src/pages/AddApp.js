@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../contexts/AuthContext';
+import { useContest } from '../contexts/ContestContext';
 import supabase, { getImageUrl } from '../config/supabaseClient';
 
 const AddApp = () => {
@@ -11,6 +12,7 @@ const AddApp = () => {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const { user } = useAuth();
+  const { currentWeek, canSubmitApps } = useContest();
   const navigate = useNavigate();
 
   const handleImageChange = (e) => {
