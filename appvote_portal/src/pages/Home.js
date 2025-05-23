@@ -27,21 +27,47 @@ const Home = () => {
 
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
-    if (!user?.id || !selectedWeekId) return;
+    if (!user?.id) return;
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('votes')
         .select('app_id')
-        .eq('user_id', user.id)
-        .eq('contest_week_id', selectedWeekId);
+        .eq('user_id', user.id);
+        
+      // Only filter by contest_week_id if we have a valid contest structure
+      if (selectedWeekId && hasValidContestStructure) {
+        query = query.eq('contest_week_id', selectedWeekId);
+      } else {
+        console.log('Fetching all votes for user without week filter');
+      }
 
-      if (error) throw error;
-      setUserVotes(data?.map(vote => vote.app_id) || []);
+      const { data, error } = await query;
+
+      if (error) {
+        // If we get a column not found error, try without the contest_week_id filter
+        if (error.code === '42703') {
+          console.warn('Column error when fetching votes - attempting without contest_week_id filter');
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('votes')
+            .select('app_id')
+            .eq('user_id', user.id);
+            
+          if (fallbackError) {
+            throw fallbackError;
+          }
+          
+          setUserVotes(fallbackData?.map(vote => vote.app_id) || []);
+        } else {
+          throw error;
+        }
+      } else {
+        setUserVotes(data?.map(vote => vote.app_id) || []);
+      }
     } catch (error) {
       console.error('Error fetching user votes:', error.message);
     }
-  }, [user, selectedWeekId]);
+  }, [user, selectedWeekId, hasValidContestStructure]);
 
   const fetchUserProfile = useCallback(async () => {
     if (!user?.id) return;
@@ -117,13 +143,15 @@ const Home = () => {
   }, [selectedWeekId, hasValidContestStructure]);
 
   useEffect(() => {
-    if (selectedWeekId) {
+    // If contest structure is valid, wait for selectedWeekId
+    // If not valid, load data anyway without week dependency
+    if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
       setLoading(true);
       fetchApps();
       fetchUserVotes();
       fetchUserProfile();
     }
-  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId]);
+  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure]);
 
   const handleVote = async (appId) => {
     if (!user) {
