@@ -12,22 +12,30 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedWeekId, setSelectedWeekId] = useState(null);
 
+  // Set initial selected week when context loads
+  useEffect(() => {
+    if (currentWeek) {
+      setSelectedWeekId(currentWeek.id);
+    }
+  }, [currentWeek]);
+
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || !selectedWeekId) return;
 
     try {
       const { data, error } = await supabase
         .from('votes')
         .select('app_id')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('contest_week_id', selectedWeekId);
 
       if (error) throw error;
       setUserVotes(data?.map(vote => vote.app_id) || []);
     } catch (error) {
       console.error('Error fetching user votes:', error.message);
     }
-  }, [user]);
+  }, [user, selectedWeekId]);
 
   const fetchUserProfile = useCallback(async () => {
     if (!user?.id) return;
