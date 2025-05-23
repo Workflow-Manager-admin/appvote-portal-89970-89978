@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ContestProvider } from './contexts/ContestContext';
 import Router from './Router';
 import { initializeStorage } from './config/supabaseClient';
+import applyContestSchema from './utils/applyContestSchema';
 import './App.css';
 
 function App() {
