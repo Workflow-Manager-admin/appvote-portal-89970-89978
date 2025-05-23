@@ -142,35 +142,14 @@ const Home = () => {
     // Check if user has already voted for this app
     if (userVotes.includes(appId)) {
       try {
-        // Start with base query
-        let query = supabase
+        const { error } = await supabase
           .from('votes')
           .delete()
           .eq('user_id', user.id)
-          .eq('app_id', appId);
-          
-        // Only add contest_week_id filter if we have valid contest structure
-        if (hasValidContestStructure && selectedWeekId) {
-          query = query.eq('contest_week_id', selectedWeekId);
-        }
+          .eq('app_id', appId)
+          .eq('contest_week_id', selectedWeekId);
 
-        const { error } = await query;
-
-        if (error) {
-          // If error is related to contest_week_id column, try without it
-          if (error.code === '42703' && error.message.includes('contest_week_id')) {
-            console.warn('Column error when removing vote - attempting without contest_week_id filter');
-            const { error: fallbackError } = await supabase
-              .from('votes')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('app_id', appId);
-              
-            if (fallbackError) throw fallbackError;
-          } else {
-            throw error;
-          }
-        }
+        if (error) throw error;
 
         // Update local state
         setUserVotes(userVotes.filter(id => id !== appId));
@@ -190,37 +169,17 @@ const Home = () => {
       }
 
       try {
-        // Add vote with or without contest week ID based on schema support
         const voteData = { 
           user_id: user.id, 
-          app_id: appId
+          app_id: appId,
+          contest_week_id: selectedWeekId
         };
-        
-        // Only include contest_week_id if the schema supports it
-        if (hasValidContestStructure && selectedWeekId) {
-          voteData.contest_week_id = selectedWeekId;
-        }
         
         const { error } = await supabase
           .from('votes')
           .insert([voteData]);
 
-        if (error) {
-          // If the error is related to missing contest_week_id column, try without it
-          if (error.code === '42703' && error.message.includes('contest_week_id')) {
-            console.warn('Column error when adding vote - attempting without contest_week_id');
-            const { error: fallbackError } = await supabase
-              .from('votes')
-              .insert([{ 
-                user_id: user.id, 
-                app_id: appId
-              }]);
-              
-            if (fallbackError) throw fallbackError;
-          } else {
-            throw error;
-          }
-        }
+        if (error) throw error;
 
         // Update local state
         setUserVotes([...userVotes, appId]);
