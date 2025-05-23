@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import { useContest } from '../contexts/ContestContext';
 import supabase from '../config/supabaseClient';
 import ImageRepairTool from '../utils/ImageRepairTool';
 

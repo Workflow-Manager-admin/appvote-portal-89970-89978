@@ -199,9 +199,9 @@ const AddApp = () => {
           <button 
             type="submit" 
             className="btn btn-submit" 
-            disabled={loading}
+            disabled={loading || !canSubmitApps()}
           >
-            {loading ? 'Submitting...' : 'Submit App'}
+            {loading ? 'Submitting...' : canSubmitApps() ? 'Submit App' : 'Submissions Closed'}
           </button>
         </form>
       </div>
