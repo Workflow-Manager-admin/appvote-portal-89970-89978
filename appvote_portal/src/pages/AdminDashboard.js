@@ -28,10 +28,13 @@ const AdminDashboard = () => {
       return;
     }
     
-    fetchApps();
-  }, [isAdmin]);
+    if (currentWeek) {
+      setSelectedWeekId(currentWeek.id);
+      fetchApps(currentWeek.id);
+    }
+  }, [isAdmin, currentWeek]);
 
-  const fetchApps = async () => {
+  const fetchApps = async (weekId = selectedWeekId) => {
     try {
       // Get all apps with their vote counts and user information
       // First, fetch apps with vote counts
