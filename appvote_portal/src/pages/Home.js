@@ -6,10 +6,11 @@ import supabase, { getImageUrl } from '../config/supabaseClient';
 
 const Home = () => {
   const { user, isAdmin } = useAuth();
+  const { currentWeek, canVote, getAllWeeks, switchWeek } = useContest();
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Removed unused userProfile state
+  const [selectedWeekId, setSelectedWeekId] = useState(null);
 
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
