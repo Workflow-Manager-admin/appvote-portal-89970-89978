@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://pelbbqqpirakcqftkmoh.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbGJicXFwaXJha2NxZnRrbW9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NDQ1MzMsImV4cCI6MjA2MzIyMDUzM30.9rdZP4jh9ahB2nKjZMUeWI3Ep4ZxZiCCiBkajaRizeg';
+// Use environment variables if available, otherwise fallback to hardcoded values
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://pelbbqqpirakcqftkmoh.supabase.co';
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbGJicXFwaXJha2NxZnRrbW9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NDQ1MzMsImV4cCI6MjA2MzIyMDUzM30.9rdZP4jh9ahB2nKjZMUeWI3Ep4ZxZiCCiBkajaRizeg';
 
+console.log(`Connecting to Supabase project: ${supabaseUrl}`);
 // Initialize the Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
 
