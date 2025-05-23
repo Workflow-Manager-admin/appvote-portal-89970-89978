@@ -11,7 +11,8 @@ const Home = () => {
     canVote, 
     getAllWeeks, 
     switchWeek, 
-    hasValidContestStructure 
+    hasValidContestStructure,
+    getActiveWeek 
   } = useContest();
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
@@ -114,6 +115,17 @@ const Home = () => {
       if (selectedWeekId && hasValidContestStructure) {
         console.log(`Fetching apps for week ID: ${selectedWeekId}`);
         query = query.eq('contest_week_id', selectedWeekId);
+      } else if (user && hasValidContestStructure) {
+        // If user is logged in but no specific week is selected,
+        // try to fetch apps for the active contest week
+        const activeWeek = getActiveWeek();
+        if (activeWeek) {
+          console.log(`User logged in - defaulting to active week ID: ${activeWeek.id}`);
+          query = query.eq('contest_week_id', activeWeek.id);
+        } else {
+          // If no active week exists, fetch all apps
+          console.log('No active week found - fetching all apps');
+        }
       } else {
         // If no week is selected or contest structure is invalid, fetch all apps
         console.log('No week selected or invalid contest structure - fetching all apps');
@@ -148,7 +160,7 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedWeekId, hasValidContestStructure]);
+  }, [selectedWeekId, hasValidContestStructure, user, getActiveWeek]);
 
   useEffect(() => {
     // If contest structure is valid, wait for selectedWeekId
