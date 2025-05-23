@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Get environment variables for Supabase connection
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL||'https://pelbbqqpirakcqftkmoh.supabase.co';
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbGJicXFwaXJha2NxZnRrbW9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NDQ1MzMsImV4cCI6MjA2MzIyMDUzM30.9rdZP4jh9ahB2nKjZMUeWI3Ep4ZxZiCCiBkajaRizeg';
 
 // Validate environment variables for Supabase connection
 const validateSupabaseEnv = () => {
@@ -34,7 +34,17 @@ if (isValid) {
 }
 
 // Initialize the Supabase client with strict environment variables (no fallbacks)
-const supabase = createClient(supabaseUrl, supabaseKey);
+let supabase;
+try {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Cannot initialize Supabase client: missing environment variables');
+  }
+  supabase = createClient(supabaseUrl, process.env.REACT_APP_SUPABASE_ANON_KEY);
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error.message);
+  // Re-throw to ensure app fails fast with missing critical configuration
+  throw error;
+}
 
 /**
  * Checks if the required storage bucket exists
