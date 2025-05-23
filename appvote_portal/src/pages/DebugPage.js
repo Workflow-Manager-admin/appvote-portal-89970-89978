@@ -6,6 +6,163 @@ import ImageDebugger from '../utils/ImageDebugger';
 import { validateContestSchema, fixContestSchemaIssues } from '../utils/validateContestSchema';
 
 /**
+ * Contest Schema Debugger component helps diagnose and fix schema issues
+ */
+const ContestSchemaDebugger = () => {
+  const [validating, setValidating] = useState(false);
+  const [fixing, setFixing] = useState(false);
+  const [validationResults, setValidationResults] = useState(null);
+  const [fixResults, setFixResults] = useState(null);
+
+  const handleValidateClick = async () => {
+    setValidating(true);
+    try {
+      const results = await validateContestSchema();
+      setValidationResults(results);
+      console.log('Schema validation results:', results);
+    } catch (error) {
+      console.error('Error validating schema:', error);
+      toast.error('Error validating schema');
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleFixClick = async () => {
+    if (!validationResults) {
+      toast.error('Please validate schema first');
+      return;
+    }
+
+    setFixing(true);
+    try {
+      const results = await fixContestSchemaIssues(validationResults);
+      setFixResults(results);
+      console.log('Schema fix results:', results);
+      
+      if (results.success) {
+        toast.success('Schema issues fixed! Validating again...');
+        // Re-validate to confirm fixes
+        const updatedResults = await validateContestSchema();
+        setValidationResults(updatedResults);
+        
+        if (updatedResults.success) {
+          toast.success('Schema is now valid!');
+        } else {
+          toast.warn('Some issues could not be fixed automatically');
+        }
+      } else {
+        toast.error('Some issues could not be fixed automatically');
+      }
+    } catch (error) {
+      console.error('Error fixing schema:', error);
+      toast.error('Error fixing schema');
+    } finally {
+      setFixing(false);
+    }
+  };
+  
+  const renderValidationStatus = () => {
+    if (!validationResults) return null;
+    
+    return (
+      <div style={{ marginTop: '15px' }}>
+        <h4>Schema Validation Results</h4>
+        <div style={{ 
+          padding: '10px',
+          backgroundColor: validationResults.success ? 'rgba(0, 128, 0, 0.15)' : 'rgba(255, 0, 0, 0.15)',
+          borderRadius: '4px',
+          borderLeft: validationResults.success ? '4px solid green' : '4px solid red',
+          marginBottom: '10px'
+        }}>
+          <strong>Status: </strong> 
+          {validationResults.success ? 'Valid Schema ✅' : 'Invalid Schema ❌'}
+        </div>
+        
+        {!validationResults.success && (
+          <div>
+            <h5>Tables</h5>
+            <ul>
+              <li>contest_weeks: {validationResults.tables.contest_weeks ? '✅ Exists' : '❌ Missing'}</li>
+              <li>contest_winners: {validationResults.tables.contest_winners ? '✅ Exists' : '❌ Missing'}</li>
+            </ul>
+            
+            <h5>Columns</h5>
+            <ul>
+              <li>apps.contest_week_id: {validationResults.columns.apps_contest_week_id ? '✅ Exists' : '❌ Missing'}</li>
+              <li>votes.contest_week_id: {validationResults.columns.votes_contest_week_id ? '✅ Exists' : '❌ Missing'}</li>
+            </ul>
+            
+            <h5>Issues</h5>
+            <ul>
+              {validationResults.issues.map((issue, index) => (
+                <li key={index} style={{ color: '#ff4d4d' }}>{issue}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  const renderFixResults = () => {
+    if (!fixResults) return null;
+    
+    return (
+      <div style={{ marginTop: '15px' }}>
+        <h4>Fix Results</h4>
+        <div style={{ 
+          padding: '10px',
+          backgroundColor: fixResults.success ? 'rgba(0, 128, 0, 0.15)' : 'rgba(255, 255, 0, 0.15)',
+          borderRadius: '4px',
+          borderLeft: fixResults.success ? '4px solid green' : '4px solid yellow',
+          marginBottom: '10px'
+        }}>
+          <strong>Status: </strong> 
+          {fixResults.success ? 'All issues fixed ✅' : 'Some issues fixed, some remain ⚠️'}
+        </div>
+        
+        <h5>Operations Performed</h5>
+        <ul>
+          {fixResults.operations.map((op, index) => (
+            <li key={index}>{op}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <p>Use this tool to validate and fix the contest schema. This helps troubleshoot issues where the app shows "Contest schema required" or is stuck on "Loading Apps...".</p>
+      
+      <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+        <button 
+          onClick={handleValidateClick} 
+          className="btn"
+          disabled={validating}
+        >
+          {validating ? 'Validating...' : 'Validate Schema'}
+        </button>
+        
+        {validationResults && !validationResults.success && (
+          <button 
+            onClick={handleFixClick} 
+            className="btn"
+            disabled={fixing}
+          >
+            {fixing ? 'Fixing...' : 'Fix Schema Issues'}
+          </button>
+        )}
+      </div>
+      
+      {renderValidationStatus()}
+      {renderFixResults()}
+    </div>
+  );
+};
+
+/**
  * A temporary debug page to test image loading and Supabase storage functionality
  * This can be removed after resolving image issues
  */
