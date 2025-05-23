@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import supabase from '../config/supabaseClient';
 import ImageDebugger from '../utils/ImageDebugger';
+import { validateContestSchema, fixContestSchemaIssues } from '../utils/validateContestSchema';
 
 /**
  * A temporary debug page to test image loading and Supabase storage functionality
