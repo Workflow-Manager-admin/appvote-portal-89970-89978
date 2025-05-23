@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useContest } from '../contexts/ContestContext';
 import { toast } from 'react-toastify';
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
+  const { contestWeeks } = useContest();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
