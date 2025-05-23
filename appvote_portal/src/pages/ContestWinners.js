@@ -8,9 +8,15 @@ import { getImageUrl } from '../config/supabaseClient';
  * that have been completed or have winners selected.
  */
 const ContestWinners = () => {
-  const { loading: contestLoading, contestWeeks, getWinnersForWeek } = useContest();
+  const { 
+    loading: contestLoading, 
+    contestWeeks, 
+    getWinnersForWeek, 
+    hasValidContestStructure 
+  } = useContest();
   const [activeTab, setActiveTab] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Find first week with winners to set as default active tab
   useEffect(() => {
