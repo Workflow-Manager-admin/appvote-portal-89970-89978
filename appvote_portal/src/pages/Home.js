@@ -37,47 +37,26 @@ const Home = () => {
 
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || !selectedWeekId) return;
 
     try {
-      let query = supabase
+      const query = supabase
         .from('votes')
         .select('app_id')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('contest_week_id', selectedWeekId);
         
-      // Only filter by contest_week_id if we have a valid contest structure
-      if (selectedWeekId && hasValidContestStructure) {
-        query = query.eq('contest_week_id', selectedWeekId);
-      } else {
-        console.log('Fetching all votes for user without week filter');
-      }
-
       const { data, error } = await query;
 
       if (error) {
-        // If we get a column not found error, try without the contest_week_id filter
-        if (error.code === '42703') {
-          console.warn('Column error when fetching votes - attempting without contest_week_id filter');
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('votes')
-            .select('app_id')
-            .eq('user_id', user.id);
-            
-          if (fallbackError) {
-            throw fallbackError;
-          }
-          
-          setUserVotes(fallbackData?.map(vote => vote.app_id) || []);
-        } else {
-          throw error;
-        }
+        throw error;
       } else {
         setUserVotes(data?.map(vote => vote.app_id) || []);
       }
     } catch (error) {
       console.error('Error fetching user votes:', error.message);
     }
-  }, [user, selectedWeekId, hasValidContestStructure]);
+  }, [user, selectedWeekId]);
 
   const fetchUserProfile = useCallback(async () => {
     if (!user?.id) return;
