@@ -122,8 +122,8 @@ const AddApp = () => {
     <div className="container add-app-page">
       <h1 className="page-title">Add Your App</h1>
       
-      {/* Contest status message */}
-      {currentWeek && (
+      {/* Contest status message - only show if contest structure exists */}
+      {hasValidContestStructure && currentWeek && (
         <div className={`contest-status-banner ${currentWeek.status}`}>
           {currentWeek.status === 'active' ? (
             <>Contest is active! Submit your app for {currentWeek.name}.</>
