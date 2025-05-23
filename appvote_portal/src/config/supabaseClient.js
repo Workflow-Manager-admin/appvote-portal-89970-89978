@@ -1,11 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use environment variables if available, otherwise fallback to hardcoded values
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://pelbbqqpirakcqftkmoh.supabase.co';
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbGJicXFwaXJha2NxZnRrbW9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NDQ1MzMsImV4cCI6MjA2MzIyMDUzM30.9rdZP4jh9ahB2nKjZMUeWI3Ep4ZxZiCCiBkajaRizeg';
+// Get environment variables for Supabase connection
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+// Check if environment variables are properly set
+if (!supabaseUrl || !supabaseKey) {
+  console.error('ERROR: Supabase environment variables are missing!');
+  console.error(`REACT_APP_SUPABASE_URL: ${supabaseUrl ? 'defined' : 'MISSING'}`);
+  console.error(`REACT_APP_SUPABASE_ANON_KEY: ${supabaseKey ? 'defined' : 'MISSING'}`);
+  console.error('Please check your .env file and ensure these variables are correctly set.');
+}
 
 console.log(`Connecting to Supabase project: ${supabaseUrl}`);
-// Initialize the Supabase client
+// Initialize the Supabase client with strict environment variables (no fallbacks)
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
