@@ -176,6 +176,7 @@ const Home = () => {
   useEffect(() => {
     // If contest structure is valid, wait for selectedWeekId
     // If not valid, load data anyway without week dependency
+    // Also react to userRole and loading to update instantly after login/logout
     if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
       setLoading(true);
       fetchApps();
@@ -189,6 +190,10 @@ const Home = () => {
     selectedWeekId,
     hasValidContestStructure,
     user,
+    // Added userRole and loading as dependencies for instant update after admin login/logout
+    // This ensures week-based and admin filtering updates after async role fetch
+    user?.userRole,
+    user?.loading,
   ]);
 
   const handleVote = async (appId) => {
