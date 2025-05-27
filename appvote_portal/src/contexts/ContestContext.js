@@ -30,11 +30,20 @@ export function ContestProvider({ children }) {
   const [contestWeeks, setContestWeeks] = useState([]);
   const [currentWeek, setCurrentWeek] = useState(null);
   const [winners, setWinners] = useState({});
-  const [loading, setLoading] = useState(true);
-  const { isAdmin } = useAuth();
+  const [contestLoading, setContestLoading] = useState(true);
 
-  // Fetch contest weeks data
+  // Pull new values from AuthContext
+  const { isAdmin, loading: authLoading, authReady } = useAuth();
+
+  // Only load contest data after session restoration is complete.
   useEffect(() => {
+    if (!authReady) {
+      setContestLoading(true);
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchContestWeeks = async () => {
       try {
         const { data, error } = await supabase
@@ -43,6 +52,7 @@ export function ContestProvider({ children }) {
           .order('id', { ascending: true });
 
         if (error) throw error;
+        if (cancelled) return;
         setContestWeeks(data || []);
 
         // Find current active week if any
@@ -54,7 +64,7 @@ export function ContestProvider({ children }) {
           // or the most recently ended week
           const upcomingWeek = data?.find(week => week.status === 'upcoming');
           const endedWeeks = data?.filter(week => week.status === 'ended' || week.status === 'completed');
-          const mostRecentEndedWeek = endedWeeks?.length 
+          const mostRecentEndedWeek = endedWeeks?.length
             ? endedWeeks.sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0]
             : null;
 
@@ -64,38 +74,44 @@ export function ContestProvider({ children }) {
         console.error('Error fetching contest weeks:', error.message);
         toast.error('Failed to load contest data');
       } finally {
-        setLoading(false);
+        if (!cancelled) setContestLoading(false);
       }
     };
 
-    fetchContestWeeks();
-    fetchWinners();
+    const fetchAll = async () => {
+      setContestLoading(true);
+      await Promise.all([fetchContestWeeks(), fetchWinners()]);
+      if (!cancelled) setContestLoading(false);
+    };
+    fetchAll();
 
-    // Subscribe to changes in contest_weeks table
+    // Subscribe to changes in contest_weeks table (live updates)
     const contestSubscription = supabase
       .channel('custom-contest-channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'contest_weeks' }, 
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'contest_weeks' },
         () => {
           fetchContestWeeks();
-      })
+        })
       .subscribe();
 
-    // Subscribe to changes in contest_winners table
+    // Subscribe to changes in contest_winners table (live updates)
     const winnersSubscription = supabase
       .channel('custom-winners-channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'contest_winners' }, 
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'contest_winners' },
         () => {
           fetchWinners();
-      })
+        })
       .subscribe();
 
     return () => {
+      cancelled = true;
       contestSubscription.unsubscribe();
       winnersSubscription.unsubscribe();
+      setContestLoading(true);
     };
-  }, []);
+  }, [authReady]); // Only refires when session restore state changes
 
   // Fetch contest winners for all weeks
   const fetchWinners = async () => {
@@ -315,8 +331,10 @@ export function ContestProvider({ children }) {
   // More comprehensive check to confirm schema is properly set up
   const hasValidContestStructure = contestWeeks && contestWeeks.length > 0 && !loading;
 
+  const mergedLoading = useMergedLoading(contestLoading, authLoading);
+
   const value = {
-    loading,
+    loading: mergedLoading,
     contestWeeks,
     currentWeek,
     winners,

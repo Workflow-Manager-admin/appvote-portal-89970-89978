@@ -389,3 +389,84 @@ src/utils/validateContestSchema.js
   Line 114:21:  'votes' is assigned a value but never used  no-unused-vars
 
 webpack compiled with 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/contexts/ContestContext.js
+  Line 332:80:  'loading' is not defined  no-undef
+  Line 335:5:   'loading' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/components/Navbar.js
+  Line 19:10:  '_' is assigned a value but never used  no-unused-vars
+
+src/contexts/ContestContext.js
+  Line 10:10:  'useMergedLoading' is defined but never used         no-unused-vars
+  Line 33:10:  'contestLoading' is assigned a value but never used  no-unused-vars
+  Line 36:29:  'authLoading' is assigned a value but never used     no-unused-vars
+
+src/pages/AddApp.js
+  Line 240:71:  Unnecessary escape character: \/  no-useless-escape
+
+src/pages/ContestWinners.js
+  Line 67:6:  React Hook useEffect has a missing dependency: 'getWinnersForWeek'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/DebugPage.js
+  Line 197:5:  'contest' is assigned a value but never used  no-unused-vars
+
+src/utils/applyContestSchema.js
+  Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
+  Line 20:15:  'data' is assigned a value but never used         no-unused-vars
+  Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
+
+src/utils/validateContestSchema.js
+  Line 84:21:   'apps' is assigned a value but never used   no-unused-vars
+  Line 114:21:  'votes' is assigned a value but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/contexts/ContestContext.js
+  Line 332:80:  'loading' is not defined  no-undef
+  Line 335:5:   'loading' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/contexts/ContestContext.js
+  Line 332:80:  'loading' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/components/Navbar.js
+  Line 19:10:  '_' is assigned a value but never used  no-unused-vars
+
+src/pages/AddApp.js
+  Line 240:71:  Unnecessary escape character: \/  no-useless-escape
+
+src/pages/ContestWinners.js
+  Line 67:6:  React Hook useEffect has a missing dependency: 'getWinnersForWeek'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/DebugPage.js
+  Line 197:5:  'contest' is assigned a value but never used  no-unused-vars
+
+src/utils/applyContestSchema.js
+  Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
+  Line 20:15:  'data' is assigned a value but never used         no-unused-vars
+  Line 43:21:  'columnCheck' is assigned a value but never used  no-unused-vars
+
+src/utils/validateContestSchema.js
+  Line 84:21:   'apps' is assigned a value but never used   no-unused-vars
+  Line 114:21:  'votes' is assigned a value but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/contexts/ContestContext.js
+  Line 332:80:  'loading' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
