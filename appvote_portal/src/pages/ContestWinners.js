@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContest } from '../contexts/ContestContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getImageUrl } from '../config/supabaseClient';
 
 /**
@@ -8,42 +9,44 @@ import { getImageUrl } from '../config/supabaseClient';
  * that have been completed or have winners selected.
  */
 const ContestWinners = () => {
-  const { 
-    loading: contestLoading, 
-    contestWeeks, 
-    getWinnersForWeek, 
-    hasValidContestStructure 
+  const {
+    loading: contestLoading,
+    contestWeeks,
+    getWinnersForWeek,
+    hasValidContestStructure
   } = useContest();
+  const { loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Redirect if contest schema doesn't exist or check for winners
+  // Wait for BOTH contest and auth hydration before running logic
   useEffect(() => {
-    if (!contestLoading) {
-      if (!hasValidContestStructure) {
-        // Redirect to home page if contest feature is not set up
-        navigate('/');
-        return;
-      }
-      
-      if (contestWeeks?.length > 0) {
-        // Find the first week with winners or set to the first week
-        const weeksWithWinners = contestWeeks.filter(week => {
-          const weekWinners = getWinnersForWeek(week.id);
-          return weekWinners && weekWinners.length > 0;
-        });
+    // Only do anything after both have hydrated (robust vs refresh/async race)
+    if (authLoading || contestLoading) return;
 
-        if (weeksWithWinners.length > 0) {
-          setActiveTab(weeksWithWinners[0].id);
-        } else {
-          // Fallback to the first week
-          setActiveTab(contestWeeks[0].id);
-        }
-        setLoading(false);
-      }
+    if (!hasValidContestStructure) {
+      // Redirect to home if contest not set up (must check after full hydration)
+      navigate('/');
+      return;
     }
-  }, [contestLoading, contestWeeks, getWinnersForWeek, hasValidContestStructure, navigate]);
+
+    if (contestWeeks?.length > 0) {
+      // Find the first week with winners or set to the first week reliably
+      const weeksWithWinners = contestWeeks.filter(week => {
+        const weekWinners = getWinnersForWeek(week.id);
+        return weekWinners && weekWinners.length > 0;
+      });
+
+      if (weeksWithWinners.length > 0) {
+        setActiveTab(weeksWithWinners[0].id);
+      } else {
+        setActiveTab(contestWeeks[0].id);
+      }
+      setLoading(false);
+    }
+  // getWinnersForWeek is guaranteed referentially stable from context, safe to omit
+  }, [authLoading, contestLoading, contestWeeks, hasValidContestStructure, navigate]);
 
   // Positions and medal colors for winners
   const positions = {
@@ -52,7 +55,8 @@ const ContestWinners = () => {
     3: { label: '3rd Place 🥉', color: '#CD7F32' }
   };
 
-  const isInitialWinnersLoad = (loading || contestLoading) && (!contestWeeks || contestWeeks.length === 0);
+  // Only show spinner if either contest or auth is still hydrating, or contest weeks not loaded (robust spinner guard)
+  const isInitialWinnersLoad = (loading || contestLoading || authLoading) && (!contestWeeks || contestWeeks.length === 0);
 
   if (isInitialWinnersLoad) {
     return (
