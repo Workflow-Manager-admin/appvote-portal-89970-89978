@@ -19,3 +19,17 @@ To create a production build, use npm run build.
 
 webpack compiled successfully
 Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/pages/AddApp.js
+  Line 223:71:  Unnecessary escape character: \/  no-useless-escape
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/pages/AddApp.js
+  Line 223:71:  Unnecessary escape character: \/  no-useless-escape
+
+webpack compiled with 1 warning
