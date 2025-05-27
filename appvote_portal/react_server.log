@@ -33,3 +33,30 @@ src/App.js
   Line 3:10:  'ContestProvider' is defined but never used  no-unused-vars
 
 webpack compiled with 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/Router.js
+  Line 61:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 68:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 75:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 82:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 89:16:  'ContestProvider' is not defined  react/jsx-no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/App.js
+  Line 3:10:  'ContestProvider' is defined but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/Router.js
+  Line 61:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 68:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 75:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 82:16:  'ContestProvider' is not defined  react/jsx-no-undef
+  Line 89:16:  'ContestProvider' is not defined  react/jsx-no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
