@@ -56,40 +56,34 @@ const Router = () => {
         <Route path="/register" element={<Register />} />
 
         {/* Protected routes */}
-        <Route path="/" element={<Layout />}>
+        <Route path="/" element={
+          <ContestProvider>
+            <Layout />
+          </ContestProvider>
+        }>
           <Route index element={
             <ProtectedRoute>
-              <ContestProvider>
-                <Home />
-              </ContestProvider>
+              <Home />
             </ProtectedRoute>
           } />
           <Route path="/add-app" element={
             <ProtectedRoute>
-              <ContestProvider>
-                <AddApp />
-              </ContestProvider>
+              <AddApp />
             </ProtectedRoute>
           } />
           <Route path="/admin" element={
             <AdminRoute>
-              <ContestProvider>
-                <AdminDashboard />
-              </ContestProvider>
+              <AdminDashboard />
             </AdminRoute>
           } />
           <Route path="/contest-winners" element={
             <ProtectedRoute>
-              <ContestProvider>
-                <ContestWinners />
-              </ContestProvider>
+              <ContestWinners />
             </ProtectedRoute>
           } />
           <Route path="/debug" element={
             <ProtectedRoute>
-              <ContestProvider>
-                <DebugPage />
-              </ContestProvider>
+              <DebugPage />
             </ProtectedRoute>
           } />
         </Route>
