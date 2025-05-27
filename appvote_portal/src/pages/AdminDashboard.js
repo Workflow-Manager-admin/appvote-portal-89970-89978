@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useContest } from "../contexts/ContestContext";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../config/supabaseClient";
+import supabase from "../config/supabaseClient";
 
 /**
  * AdminDashboard page for admins to view app submission table with admin-only info.

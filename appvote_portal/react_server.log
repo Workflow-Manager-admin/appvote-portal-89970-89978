@@ -97,3 +97,6 @@ ERROR in ./src/pages/AdminDashboard.js 49:18-31
 export 'supabase' (imported as 'supabase') was not found in '../config/supabaseClient' (possible exports: default, getImageUrl, initializeStorage)
 
 webpack compiled with 1 error
+Compiling...
+Compiled successfully!
+webpack compiled successfully
