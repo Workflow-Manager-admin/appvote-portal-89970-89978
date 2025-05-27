@@ -5,7 +5,7 @@ import supabase from '../config/supabaseClient';
 import ImageDebugger from '../utils/ImageDebugger';
 import { validateContestSchema, fixContestSchemaIssues } from '../utils/validateContestSchema';
 
-// Auth/Context
+ // Auth/Context
 import { useAuth } from '../contexts/AuthContext';
 import { useContest } from '../contexts/ContestContext';
 
@@ -178,9 +178,26 @@ const DebugPage = () => {
   const [testResult, setTestResult] = useState(null);
 
   // Auth/Context
-  const { user, loading: authLoading } = useAuth ? useAuth() : { user: null, loading: false };
-  const { contest, loading: contestLoading } = useContest ? useContest() : { contest: null, loading: false };
-  // ^ Defensive: If hooks not provided, fallback to null
+  let user, authLoading, contest, contestLoading;
+  try {
+    // Always call hooks unconditionally
+    const auth = useAuth();
+    user = auth?.user;
+    authLoading = auth?.loading ?? false;
+  } catch {
+    user = null;
+    authLoading = false;
+  }
+
+  try {
+    const contestObj = useContest();
+    contest = contestObj?.contest;
+    contestLoading = contestObj?.loading ?? false;
+  } catch {
+    contest = null;
+    contestLoading = false;
+  }
+  // Defensive: fallback if hooks error (e.g., missing provider)
 
   // Effect: Only run when user/context is loaded (to survive async restoration/hydration on refresh)
   useEffect(() => {
