@@ -52,7 +52,9 @@ const ContestWinners = () => {
     3: { label: '3rd Place 🥉', color: '#CD7F32' }
   };
 
-  if (loading || contestLoading) {
+  const isInitialWinnersLoad = (loading || contestLoading) && (!contestWeeks || contestWeeks.length === 0);
+
+  if (isInitialWinnersLoad) {
     return (
       <div className="container">
         <div className="loading">Loading contest winners...</div>
