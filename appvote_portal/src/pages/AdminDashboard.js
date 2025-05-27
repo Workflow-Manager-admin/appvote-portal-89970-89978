@@ -62,6 +62,7 @@ const AdminDashboard = () => {
     hasValidContestStructure,
   ]);
 
+  // Memoized function to robustly fetch apps after context/user/contest restoration.
   const fetchApps = async (weekId = selectedWeekId) => {
     try {
       setLoadingApps(true);
@@ -142,6 +143,17 @@ const AdminDashboard = () => {
       setLoadingApps(false);
     }
   };
+
+  // Refire data fetch after week change, but only if restoration complete (see effect above)
+  useEffect(() => {
+    if (!user || !isAdmin() || loading || userRole === null) return;
+    if (hasValidContestStructure && !selectedWeekId) return;
+    // Only fetch if a valid week is chosen or contest structure is off
+    if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
+      fetchApps(selectedWeekId);
+    }
+    // eslint-disable-next-line
+  }, [selectedWeekId, hasValidContestStructure, user, userRole, loading]);
 
   const generateShareableLink = () => {
     // Get top 10 apps
