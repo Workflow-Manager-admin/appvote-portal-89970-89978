@@ -171,38 +171,52 @@ const ContestSchemaDebugger = () => {
  * This can be removed after resolving image issues
  */
 const DebugPage = () => {
+  // State
   const [bucketStatus, setBucketStatus] = useState('Checking...');
   const [files, setFiles] = useState([]);
   const [testImageUrl, setTestImageUrl] = useState(null);
   const [testResult, setTestResult] = useState(null);
-  
+
+  // Auth/Context
+  const { user, loading: authLoading } = useAuth ? useAuth() : { user: null, loading: false };
+  const { contest, loading: contestLoading } = useContest ? useContest() : { contest: null, loading: false };
+  // ^ Defensive: If hooks not provided, fallback to null
+
+  // Effect: Only run when user/context is loaded (to survive async restoration/hydration on refresh)
   useEffect(() => {
+    // Wait until both user and contest context are ready
+    if (authLoading || contestLoading) return; // Don't run until done
+    if (!user) {
+      setBucketStatus('User not authenticated.');
+      setFiles([]);
+      return;
+    }
+
     // Check if app_images bucket exists
     const checkBucket = async () => {
       try {
         const { data: buckets, error } = await supabase.storage.listBuckets();
-        
+
         if (error) {
           setBucketStatus(`Error: ${error.message}`);
           return;
         }
-        
+
         const bucket = buckets.find(b => b.name === 'app_images');
-        
+
         if (bucket) {
           setBucketStatus(`Found: ${bucket.name} (Public: ${bucket.public ? 'Yes' : 'No'})`);
-          
+
           // List files in bucket
           const { data, error: listError } = await supabase.storage
             .from('app_images')
             .list();
-            
+
           if (listError) {
             setFiles([`Error listing files: ${listError.message}`]);
           } else {
             setFiles(data || []);
           }
-          
         } else {
           setBucketStatus('Not found. Please create it in Supabase dashboard.');
         }
@@ -210,9 +224,10 @@ const DebugPage = () => {
         setBucketStatus(`Exception: ${e.message}`);
       }
     };
-    
+
     checkBucket();
-  }, []);
+  // Only re-run when user/context is loaded or their readiness changes
+  }, [user, authLoading, contest, contestLoading]);
   
   const handleTestUpload = async () => {
     setTestResult('Uploading test image...');
