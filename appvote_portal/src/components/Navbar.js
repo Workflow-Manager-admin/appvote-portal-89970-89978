@@ -2,16 +2,24 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useContest } from '../contexts/ContestContext';
 import { toast } from 'react-toastify';
+import { useState, useEffect } from 'react';
 
 /**
  * PUBLIC_INTERFACE
  * Navbar component renders the main navigation bar featuring navigation links.
  * The active nav-link is highlighted based on the current route using NavLink from React Router.
+ * Menu updates reactively on auth/admin/login/logout due to userRole & loading dependencies.
  */
 const Navbar = () => {
   const { user, userRole, loading, logout, isAdmin } = useAuth();
   const { hasValidContestStructure } = useContest();
   const navigate = useNavigate();
+
+  // Force re-render when loading or userRole changes (fixes delayed admin menu)
+  const [_, setInstantUpdate] = useState(0);
+  useEffect(() => {
+    setInstantUpdate((n) => n + 1); // trigger re-render
+  }, [userRole, loading]);
 
   const handleLogout = async () => {
     const { error } = await logout();
@@ -30,7 +38,6 @@ const Navbar = () => {
           <NavLink to="/" className="logo">
             <span className="logo-symbol">*</span> Kavia AI App Contest
           </NavLink>
-          
           {user && (
             <div className="nav-links">
               <NavLink
