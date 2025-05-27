@@ -5,8 +5,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { getImageUrl } from '../config/supabaseClient';
 
 /**
- * ContestWinners component displays the winners for all contest weeks
- * that have been completed or have winners selected.
+ * ContestWinners displays winners for contest weeks that are completed or have results.
+ *
+ * DATA FETCH/HYDRATION LOGIC:
+ * - All data-dependent effects wait for both contest and auth context readiness (authLoading & contestLoading must be false).
+ * - This ensures correct behavior on initial page load, after refresh, or user re-auth/context restoration.
+ * - Any dependency relevant to contest/user context must be included in useEffect's dependency array.
+ * - On loss/restoration of context, or page refresh, effects will reliably retrigger.
+ * 
+ * MAINTAINABILITY:
+ * - If context structure changes (e.g., contest/user), update the dependencies in effects accordingly.
+ * - Effects must always be resilient to timing/race between context hydration and initial mount.
+ * - See comments below for further maintainability guidelines.
  */
 const ContestWinners = () => {
   const {
@@ -20,24 +30,30 @@ const ContestWinners = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Wait for BOTH contest and auth hydration before running logic
+  // -------------------------------------------
+  // Robustly select initial tab after hydration:
+  // - Only runs after BOTH auth and contest contexts are ready (hydration complete)
+  // - Also retriggers on context restoration after page refresh.
+  // - DO NOT add getWinnersForWeek to deps: it's referentially stable from context, so safe.
+  // - Each contestWeek entry and hasValidContestStructure are true after valid fetch.
+  // -------------------------------------------
   useEffect(() => {
-    // Only do anything after both have hydrated (robust vs refresh/async race)
-    if (authLoading || contestLoading) return;
+    // Guard: wait for both auth and contest to finish hydrating—CRITICAL for correct behavior after refresh
+    if (authLoading || contestLoading) return; // Wait for BOTH to finish
 
+    // If contest data is not valid (e.g. setup not complete), redirect to home
     if (!hasValidContestStructure) {
-      // Redirect to home if contest not set up (must check after full hydration)
       navigate('/');
       return;
     }
 
+    // If there are contest weeks, select the initial tab
     if (contestWeeks?.length > 0) {
-      // Find the first week with winners or set to the first week reliably
+      // Find the first week that has actual winners (for user convenience)
       const weeksWithWinners = contestWeeks.filter(week => {
         const weekWinners = getWinnersForWeek(week.id);
         return weekWinners && weekWinners.length > 0;
       });
-
       if (weeksWithWinners.length > 0) {
         setActiveTab(weeksWithWinners[0].id);
       } else {
@@ -45,7 +61,9 @@ const ContestWinners = () => {
       }
       setLoading(false);
     }
-  // getWinnersForWeek is guaranteed referentially stable from context, safe to omit
+    // Always use a complete dependency array to ensure proper effect retrigger after context restoration.
+    // Do NOT use [] or partial deps as this breaks on refresh or login-restore.
+    // getWinnersForWeek is intentionally not included as it is stable per context.
   }, [authLoading, contestLoading, contestWeeks, hasValidContestStructure, navigate]);
 
   // Positions and medal colors for winners
