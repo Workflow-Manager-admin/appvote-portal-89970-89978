@@ -230,13 +230,23 @@ const DebugPage = () => {
   }, [user, authLoading, contest, contestLoading]);
   
   const handleTestUpload = async () => {
+    // Robust: Don't allow if not authenticated/ready
+    if (authLoading || contestLoading) {
+      setTestResult('Waiting for user/context to finish loading...');
+      return;
+    }
+    if (!user) {
+      setTestResult('You must be logged in to run this test.');
+      return;
+    }
+
     setTestResult('Uploading test image...');
-    
+
     try {
       // Create a simple 1x1 pixel image
       const base64Image = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
       const imageData = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
-      
+
       // Upload test image
       const filePath = `debug/test-${Date.now()}.png`;
       const { error } = await supabase.storage
@@ -244,27 +254,27 @@ const DebugPage = () => {
         .upload(filePath, imageData, {
           contentType: 'image/png'
         });
-        
+
       if (error) {
         setTestResult(`Upload failed: ${error.message}`);
         return;
       }
-      
+
       setTestResult('Upload successful! Generating URL...');
-      
+
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('app_images')
         .getPublicUrl(filePath);
-        
+
       if (!urlData || !urlData.publicUrl) {
         setTestResult('Failed to generate public URL');
         return;
       }
-      
+
       setTestImageUrl(urlData.publicUrl);
       setTestResult(`Success! URL: ${urlData.publicUrl}`);
-      
+
     } catch (e) {
       setTestResult(`Error: ${e.message}`);
     }

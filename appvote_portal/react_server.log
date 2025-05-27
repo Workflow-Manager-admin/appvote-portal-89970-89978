@@ -52,3 +52,20 @@ src/pages/DebugPage.js
 Search for the keywords to learn more about each error.
 
 webpack compiled with 1 error
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/pages/DebugPage.js
+  Line 181:52:  React Hook "useAuth" is called conditionally. React Hooks must be called in the exact same order in every component render     react-hooks/rules-of-hooks
+  Line 182:61:  React Hook "useContest" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+Search for the keywords to learn more about each error.
+ERROR in [eslint] 
+src/pages/DebugPage.js
+  Line 181:52:  React Hook "useAuth" is called conditionally. React Hooks must be called in the exact same order in every component render     react-hooks/rules-of-hooks
+  Line 182:61:  React Hook "useContest" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error
