@@ -6,11 +6,10 @@ import supabase, { getImageUrl } from '../config/supabaseClient';
 
 /**
  * DATA FETCHING PATTERN:
- * All fetch effects are orchestrated to fire reliably after all context/auth state is restored,
- * including after a page refresh, login transition, or context change.
- * Effects depend on [authLoading, contextLoading, user, contestState] (as appropriate).
- * This prevents race conditions and missed fetches on restoration.
+ * Fetching reliably fires after all context/auth state is restored (refresh, login, etc).
+ * Effect depends on [user, hasValidContestStructure, selectedWeekId, etc].
  */
+
 const Home = () => {
   const { user, isAdmin } = useAuth();
   const {
@@ -26,7 +25,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedWeekId, setSelectedWeekId] = useState(null);
 
-  // Wait for all async context/auth to be restored before setting selected week
+  // Wait for async context/auth to be present before setting week
   useEffect(() => {
     if (!user || !user.id || !currentWeek) return;
     const activeWeek = getActiveWeek();
@@ -37,7 +36,7 @@ const Home = () => {
     }
   }, [currentWeek, user, getActiveWeek]);
 
-  // Refire week selection if one of the states arrives late (robust after refresh)
+  // Safety: ensure week selection never stuck after late-arriving state
   useEffect(() => {
     if (!selectedWeekId && user && user.id && currentWeek) {
       const activeWeek = getActiveWeek();
@@ -59,7 +58,6 @@ const Home = () => {
       const { data, error } = await query;
       if (error) {
         if (error.code === '42703') {
-          // Fallback query in case column missing
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('votes')
             .select('app_id')
@@ -85,7 +83,7 @@ const Home = () => {
         .select('*')
         .eq('id', user.id)
         .single();
-      // Ignored: not used in UI here
+      // Not used in UI
     } catch (error) {
       console.error('Error fetching user profile:', error.message);
     }
@@ -122,7 +120,6 @@ const Home = () => {
         const { data, error } = await query;
         if (error) {
           if (error.code === '42703') {
-            // Fallback query in case column missing
             const { data: fallbackData, error: fallbackError } = await supabase
               .from('apps')
               .select(
@@ -148,28 +145,35 @@ const Home = () => {
   );
 
   /**
-   * Robust effect: fires fetch only after all context/auth/contest state is restored (including after refresh)
+   * Refactored effect: Single, robust effect waits for all state (user, contest, week).
+   * Reliably triggers on refresh/context hydration or any dependency change.
    */
   useEffect(() => {
-    if (!user || !user.id) {
-      // Unauthenticated: clear everything, don't fetch
+    const ready =
+      !!user &&
+      !!user.id &&
+      !!hasValidContestStructure &&
+      !!selectedWeekId;
+    if (!ready) {
       setApps([]);
       setUserVotes([]);
       setLoading(false);
       return;
     }
-    if (!hasValidContestStructure || !selectedWeekId) return;
+
     setLoading(true);
-    fetchApps();
-    fetchUserVotes();
-    fetchUserProfile();
+    Promise.all([
+      fetchApps(),
+      fetchUserVotes(),
+      fetchUserProfile(),
+    ]).finally(() => setLoading(false));
   }, [
+    user,
+    hasValidContestStructure,
+    selectedWeekId,
     fetchApps,
     fetchUserVotes,
     fetchUserProfile,
-    user && user.id,
-    hasValidContestStructure,
-    selectedWeekId,
   ]);
 
   const handleVote = async (appId) => {
@@ -252,9 +256,7 @@ const Home = () => {
     }
   };
 
-  const isOwnApp = (appUserId) => {
-    return user?.id === appUserId;
-  };
+  const isOwnApp = (appUserId) => user?.id === appUserId;
 
   // PUBLIC_INTERFACE
   const handleDeleteApp = async (app) => {
