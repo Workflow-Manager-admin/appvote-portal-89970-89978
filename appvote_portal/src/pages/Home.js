@@ -174,22 +174,37 @@ const Home = () => {
   );
 
   useEffect(() => {
-    // Prevent fetching until user auth resolves
-    // Don't run fetches while loading or before user is ready
-    if (!user || !user.id) return;
-    if (typeof user === 'undefined') return;
-    // Ensure loading complete
-    if (typeof user.loading !== 'undefined' && user.loading) return;
+    // Defensive: Always ensure loading resolves and fetches are triggered reliably.
+    // - Trigger all fetches as soon as a user session is fully available (including on page refresh, auto-login, direct login, or session restoration).
+    // - Avoid any situation where spinner could persist indefinitely.
 
-    // If contest structure is valid, wait for selectedWeekId
-    // If not valid, load data anyway without week dependency
-    // Also react to userRole to update instantly after admin login/logout
-    if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
-      setLoading(true);
-      fetchApps();
-      fetchUserVotes();
-      fetchUserProfile();
+    // Wait only for 'user' to be explicitly null or an object (never undefined); block only if 'loading' in AuthContext is true
+    if (typeof user === 'undefined' || user === undefined) return;
+    if (!user || !user.id) {
+      // Not authenticated (including just logged out): clear everything and resolve loading, no fetches needed
+      setApps([]);
+      setUserVotes([]);
+      setLoading(false);
+      return;
     }
+
+    // If global AuthContext still loading, wait.
+    if (user.loading === true) return;
+
+    // If contest context is still loading or not yet hydrated, avoid early fetch
+    if (typeof hasValidContestStructure === 'undefined') return;
+    if (hasValidContestStructure && !selectedWeekId) return;
+
+    setLoading(true);
+
+    // Other defensive checks for fetching logic
+    // Only call fetches if user is properly present (should always be if we pass above guards)
+    fetchApps();
+    fetchUserVotes();
+    fetchUserProfile();
+
+    // No need for further guards; APIs will fire after session restoration, on login, and on every eligible session transition
+
   }, [
     fetchApps,
     fetchUserVotes,
@@ -197,9 +212,7 @@ const Home = () => {
     selectedWeekId,
     hasValidContestStructure,
     user,
-    // Watch changes to isAdmin or userRole in AuthContext, if present
     user?.userRole,
-    user?.loading,
   ]);
 
   const handleVote = async (appId) => {
