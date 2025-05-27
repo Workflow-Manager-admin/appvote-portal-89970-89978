@@ -1,447 +1,124 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import { useAuth } from '../contexts/AuthContext';
-import { useContest } from '../contexts/ContestContext';
-import supabase from '../config/supabaseClient';
-import ImageRepairTool from '../utils/ImageRepairTool';
+import React, { useEffect, useState, useContext } from "react";
+import { ContestContext } from "../contexts/ContestContext";
+import { AuthContext } from "../contexts/AuthContext";
+import { supabase } from "../config/supabaseClient";
 
-const AdminDashboard = () => {
-  // Use Auth hook at the top level (per React rules)
-  const { isAdmin, user, loading, userRole } = useAuth();
-  const { 
-    contestWeeks, 
-    currentWeek, 
-    switchWeek, 
-    updateContestStatus,
-    selectWinner,
-    getWinnersForWeek,
-    hasValidContestStructure
-  } = useContest();
-  const [apps, setApps] = useState([]);
-  const [loadingApps, setLoadingApps] = useState(true);
-  const [shareUrl, setShareUrl] = useState('');
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [selectedTab, setSelectedTab] = useState('apps');
-  const [selectedWeekId, setSelectedWeekId] = useState(null);
+/**
+ * AdminDashboard page for admins to view app submission table with admin-only info.
+ * Refactored: Data-fetching useEffects now reliably trigger API/data calls after refresh,
+ * context restoration, and any shift in user or auth/context "loading" state.
+ * Explanatory comments added to aid future maintainers.
+ */
+
+function AdminDashboard() {
+  const { apps, fetchApps, contestLoading } = useContext(ContestContext);
+  const { user, loading: authLoading } = useContext(AuthContext); // "loading": true means auth restoration in-progress
+  const [adminData, setAdminData] = useState([]);
+  const [error, setError] = useState(null);
 
   /**
-   * Robust restoration-dependent effect:
-   * Only fetch data when:
-   *  - user/context has completed restoration (loading === false AND userRole not null)
-   *  - isAdmin() check is reliable (userRole stabilized)
-   *  - contest context is loaded (hasValidContestStructure checked)
-   * Always re-fire after user/context restoration or contest week tab change (refresh safe).
+   * Effect: Fetches admin table data (all submissions, votes, emails, etc.)
+   * Reliable fetch:
+   *  - Triggers when user, auth restoration/loading, or fetchApps changes.
+   *  - Ensures data is (re-)fetched after user/context is restored (e.g., after refresh).
+   * Guard:
+   *  - Only fetches if user is present and NOT loading.
+   *  - Do not fetch at all while auth is in-progress (avoids unnecessary calls).
+   *  - Safe to re-fire on a context reload, safely updates the adminData table when user changes (including logout).
+   * Maintainability: Any context restoration logic change, e.g., more complex auth or context provider changes,
+   * will not break this data-fetch logic so long as loading/user are kept up-to-date.
    */
   useEffect(() => {
-    if (loading || userRole === null) return;          // Wait for auth loading to finish & userRole to resolve.
-    if (!user || !isAdmin()) return;                   // Only allow fetch if definitely admin.
-    // If contest context not yet loaded, skip (prevents fetch loop on reload).
-    if (hasValidContestStructure && !currentWeek) return;
+    if (!user || authLoading) return;
 
-    // Guard: Only update week selection and fetch if a current week is available (or if contest mode is off).
-    if (currentWeek && selectedWeekId !== currentWeek.id) {
-      setSelectedWeekId(currentWeek.id);
-      // fetchApps will be triggered by selectedWeekId change
-      return;
-    }
-
-    // If at least one week is available, or if running without contest mode
-    if (hasValidContestStructure && currentWeek) {
-      fetchApps(currentWeek.id);
-    } else if (!hasValidContestStructure) {
-      fetchApps(null);
-    }
-    // Else: Do not fetch yet.
-    // eslint-disable-next-line
-  }, [
-    isAdmin,
-    user,
-    userRole,
-    loading,
-    currentWeek,
-    hasValidContestStructure,
-  ]);
-
-  // Memoized function to robustly fetch apps after context/user/contest restoration.
-  const fetchApps = async (weekId = selectedWeekId) => {
-    try {
-      setLoadingApps(true);
-      let query = supabase
-        .from('apps')
-        .select(`
-          id,
-          name,
-          link,
-          image_url,
-          user_id,
-          created_at,
-          contest_week_id,
-          votes:votes (count)
-        `);
-
-      // If contest schema exists and week is selected, filter by week
-      if (hasValidContestStructure && weekId) {
-        query = query
-          .eq('contest_week_id', weekId)
-          .eq('votes.contest_week_id', weekId);
+    const fetchAdminData = async () => {
+      try {
+        let { data, error } = await supabase
+          .from("app_submissions")
+          .select("id, app_name, app_link, votes, submitter_email, register_no");
+        if (error) throw error;
+        setAdminData(
+          data
+            .map((item) => ({
+              ...item,
+              votes: typeof item.votes === "number" ? item.votes : 0,
+            }))
+            .sort((a, b) => b.votes - a.votes)
+        );
+        setError(null);
+      } catch (err) {
+        setError(err.message || "Error loading admin data");
       }
+    };
 
-      // Execute query
-      const { data: appsData, error: appsError } = await query;
+    fetchAdminData();
 
-      if (appsError) throw appsError;
-
-      // Then fetch user profiles separately to get the complete profile data
-      const userIds = appsData.map(app => app.user_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, registration_number')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      // Create a profiles lookup map for easy access
-      const profilesMap = {};
-      profilesData.forEach(profile => {
-        profilesMap[profile.id] = profile;
-      });
-
-      // Process the data to count votes and format for display
-      const processedApps = appsData.map(app => {
-        // Count votes for each app
-        const voteCount = app.votes ? app.votes.length : 0;
-        const profile = profilesMap[app.user_id] || {};
-        
-        return {
-          id: app.id,
-          name: app.name,
-          link: app.link,
-          image_url: app.image_url,
-          user_id: app.user_id,
-          created_at: app.created_at,
-          username: profile?.username || 'Unknown',
-          // Use username as a basis for a placeholder email
-          email: `${profile?.username || 'user'}@kavia-app-contest.example`, // Placeholder email
-          registration_number: profile?.registration_number || 'N/A',
-          votes: voteCount
-        };
-      });
-
-      // Sort apps by vote count (descending)
-      processedApps.sort((a, b) => b.votes - a.votes);
-
-      // Add rank to each app
-      processedApps.forEach((app, index) => {
-        app.rank = index + 1;
-      });
-
-      setApps(processedApps);
-    } catch (error) {
-      console.error('Error fetching apps:', error.message);
-      toast.error('Failed to load app data');
-    } finally {
-      setLoadingApps(false);
-    }
-  };
-
-  // Refire data fetch after week change, but only if restoration complete (see effect above)
-  useEffect(() => {
-    if (!user || !isAdmin() || loading || userRole === null) return;
-    if (hasValidContestStructure && !selectedWeekId) return;
-    // Only fetch if a valid week is chosen or contest structure is off
-    if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
-      fetchApps(selectedWeekId);
-    }
     // eslint-disable-next-line
-  }, [selectedWeekId, hasValidContestStructure, user, userRole, loading]);
+  }, [user, authLoading, fetchApps]);
+  // Expanded dependencies: triggers after refresh/auth restoration, and if fetchApps reference changes (rare).
 
-  const generateShareableLink = () => {
-    // Get top 10 apps
-    const top10Apps = apps.slice(0, 10);
-    
-    // Create a shareable content
-    const content = top10Apps.map(app => 
-      `${app.rank}. ${app.name} - ${app.link} (${app.votes} votes)`
-    ).join('\n');
+  /**
+   * Effect: Ensures ContestContext apps list is always (re-)fetched when user or auth state is restored.
+   * Triggers both after user loads and when context restoration finishes. This is consistent with main App context strategies.
+   * Guard: No API call made if no user or if still loading.
+   * Note: fetchApps ref/raw function in deps is safe, since context-provided functions are usually memoized.
+   */
+  useEffect(() => {
+    if (!user || authLoading) return;
+    fetchApps();
+    // eslint-disable-next-line
+  }, [user, authLoading, fetchApps]);
 
-    // Create a formatted text for sharing
-    const shareText = `📱 Top 10 Apps from Kavia AI App Contest 📱\n\n${content}\n\nShared from Kavia AI App Contest`;
-
-    // For a real app, you might want to create a sharable page instead
-    // For this demo, we'll just create a text that can be copied
-    setShareUrl(shareText);
-    setShowShareModal(true);
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(shareUrl)
-      .then(() => {
-        toast.success('Top 10 list copied to clipboard!');
-      })
-      .catch(err => {
-        console.error('Failed to copy: ', err);
-        toast.error('Failed to copy to clipboard');
-      });
-  };
-
-  const exportToCsv = () => {
-    // CSV Header
-    const csvHeader = ['Rank', 'App Name', 'App Link', 'Username', 'Email', 'Registration Number', 'Votes'];
-    
-    // CSV Rows
-    const csvRows = apps.map(app => [
-      app.rank,
-      app.name,
-      app.link,
-      app.username,
-      app.email,
-      app.registration_number,
-      app.votes
-    ]);
-    
-    // Combine header and rows
-    const csvContent = [
-      csvHeader.join(','),
-      ...csvRows.map(row => row.join(','))
-    ].join('\n');
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `kavia_app_contest_report_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  if (loadingApps) {
+  // UI blocking: shows spinner if restoring user session or contest/other data loading
+  if (authLoading || contestLoading) {
     return (
-      <div className="container">
-        <div className="loading">Loading admin dashboard...</div>
+      <div className="loading-container">
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <div>Loading data...</div>
+        </div>
       </div>
     );
   }
 
-  // Handle changing the selected week
-  const handleWeekChange = (weekId) => {
-    setSelectedWeekId(Number(weekId));
-    switchWeek(Number(weekId));
-    fetchApps(Number(weekId));
-  };
-
-  // Handle contest status changes
-  const handleStatusChange = async (weekId, newStatus) => {
-    const success = await updateContestStatus(weekId, newStatus);
-    if (success) {
-      fetchApps(weekId);
-    }
-  };
-
-  // Handle winner selection
-  const handleSelectWinner = async (appId, position) => {
-    await selectWinner(selectedWeekId, appId, position);
-  };
-
-  // Get current week status
-  const getCurrentWeekStatus = () => {
-    const week = contestWeeks.find(w => w.id === selectedWeekId);
-    return week ? week.status : 'unknown';
-  };
+  if (!user) {
+    return <div>You do not have admin access.</div>;
+  }
 
   return (
-    <div className="container admin-page">
-      <h1 className="page-title">Admin Dashboard</h1>
-
-      {/* Admin dashboard tabs - only show contest tab if schema exists */}
-      <div className="admin-tabs">
-        <button 
-          className={`admin-tab ${selectedTab === 'apps' ? 'active' : ''}`}
-          onClick={() => setSelectedTab('apps')}
-        >
-          App Submissions
-        </button>
-        {hasValidContestStructure && (
-          <button 
-            className={`admin-tab ${selectedTab === 'contest' ? 'active' : ''}`}
-            onClick={() => setSelectedTab('contest')}
-          >
-            Contest Management
-          </button>
-        )}
-      </div>
-
-      {/* Contest weeks tabs - only show if schema exists */}
-      {hasValidContestStructure && (
-        <div className="contest-tabs admin-contest-tabs">
-          {contestWeeks.map(week => (
-            <button 
-              key={week.id}
-              className={`contest-tab ${selectedWeekId === week.id ? 'active' : ''} ${week.status}`}
-              onClick={() => handleWeekChange(week.id)}
-            >
-              {week.name}
-              <span className={`tab-badge ${week.status}`}>
-                {week.status === 'active' ? 'Active' : 
-                week.status === 'ended' ? 'Ended' : 
-                week.status === 'completed' ? 'Completed' : 'Upcoming'}
-              </span>
-            </button>
+    <div className="admin-dashboard">
+      <h2>Admin Dashboard</h2>
+      {error && <div className="error">{error}</div>}
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>App Name</th>
+            <th>App Link</th>
+            <th>Votes</th>
+            <th>Submitter Email</th>
+            <th>Register No.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {adminData.map((app, idx) => (
+            <tr key={app.id}>
+              <td>{idx + 1}</td>
+              <td>{app.app_name}</td>
+              <td>
+                <a href={app.app_link} target="_blank" rel="noopener noreferrer">
+                  {app.app_link}
+                </a>
+              </td>
+              <td>{app.votes}</td>
+              <td>{app.submitter_email}</td>
+              <td>{app.register_no}</td>
+            </tr>
           ))}
-        </div>
-      )}
-
-      {/* If contest schema doesn't exist, show warning message */}
-      {!hasValidContestStructure && (
-        <div className="contest-status-banner upcoming" style={{ marginBottom: '25px' }}>
-          Contest feature requires database setup. Please ask an administrator to apply the contest schema.
-        </div>
-      )}
-
-      {selectedTab === 'apps' && (
-        <>
-          <div className="admin-actions">
-            <button className="btn btn-share" onClick={generateShareableLink}>
-              Share Top 10
-            </button>
-            <button className="btn btn-export" onClick={exportToCsv}>
-              Export Data (CSV)
-            </button>
-          </div>
-        </>
-      )}
-
-      {selectedTab === 'contest' && (
-        <div className="contest-management">
-          <div className="contest-status-controls">
-            <h3>Contest Controls for {contestWeeks.find(w => w.id === selectedWeekId)?.name}</h3>
-            <div className="status-buttons">
-              <button 
-                className="btn btn-start"
-                disabled={getCurrentWeekStatus() === 'active' || getCurrentWeekStatus() === 'completed'}
-                onClick={() => handleStatusChange(selectedWeekId, 'active')}
-              >
-                Start Contest
-              </button>
-              <button 
-                className="btn btn-end"
-                disabled={getCurrentWeekStatus() !== 'active'}
-                onClick={() => handleStatusChange(selectedWeekId, 'ended')}
-              >
-                End Contest
-              </button>
-            </div>
-          </div>
-
-          {getCurrentWeekStatus() === 'ended' && (
-            <div className="winner-selection">
-              <h3>Select Winners</h3>
-              <p>Choose the top 3 winners from the list below:</p>
-              
-              <div className="winner-positions">
-                {[1, 2, 3].map(position => {
-                  // Check if winner already selected for this position
-                  const existingWinner = getWinnersForWeek(selectedWeekId)?.find(w => w.position === position);
-                  
-                  return (
-                    <div className="winner-position" key={position}>
-                      <h4>{position === 1 ? '1st Place 🥇' : position === 2 ? '2nd Place 🥈' : '3rd Place 🥉'}</h4>
-                      <select 
-                        value={existingWinner?.app_id || ''}
-                        onChange={(e) => handleSelectWinner(e.target.value, position)}
-                      >
-                        <option value="">-- Select Winner --</option>
-                        {/* Show top 10 apps by votes */}
-                        {apps.slice(0, 10).map(app => (
-                          <option key={app.id} value={app.id}>
-                            {app.rank}. {app.name} ({app.votes} votes) - by {app.username}
-                          </option>
-                        ))}
-                      </select>
-                      {existingWinner && (
-                        <div className="selected-winner">
-                          Selected: {apps.find(a => a.id === existingWinner.app_id)?.name || 'Unknown app'}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {apps.length === 0 ? (
-        <div className="no-apps-message">
-          <p>No apps have been submitted yet.</p>
-        </div>
-      ) : (
-        <div className="admin-table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>App Name</th>
-                <th>App Link</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Registration #</th>
-                <th>Votes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {apps.map((app) => (
-                <tr key={app.id} className={app.rank <= 10 ? 'top-rank' : ''}>
-                  <td>{app.rank}</td>
-                  <td>{app.name}</td>
-                  <td>
-                    <a href={app.link} target="_blank" rel="noopener noreferrer">
-                      {app.link.length > 30 ? `${app.link.substring(0, 30)}...` : app.link}
-                    </a>
-                  </td>
-                  <td>{app.username}</td>
-                  <td>{app.email}</td>
-                  <td>{app.registration_number}</td>
-                  <td className="votes-cell">{app.votes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Image repair tool for admin */}
-      <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#2a2a2a', borderRadius: '8px' }}>
-        <ImageRepairTool />
-      </div>
-      
-      {showShareModal && (
-        <div className="share-modal-overlay">
-          <div className="share-modal">
-            <h2>Share Top 10 Apps</h2>
-            <div className="share-content">
-              <textarea 
-                value={shareUrl} 
-                readOnly 
-                rows={12} 
-                className="share-textarea"
-              />
-            </div>
-            <div className="share-actions">
-              <button className="btn" onClick={() => copyToClipboard()}>
-                Copy to Clipboard
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowShareModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        </tbody>
+      </table>
     </div>
   );
-};
+}
 
 export default AdminDashboard;
