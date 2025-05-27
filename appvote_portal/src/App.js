@@ -96,16 +96,19 @@ function DeferredInitialization({ children }) {
 
 // PUBLIC_INTERFACE
 /**
- * Main application component. Wraps router and context providers, robustly handling
- * authentication/session restoration and spinner display.
+ * Main application component.
+ * Now ContestProvider (and all contest context state/fetching) wraps the entire Router/App,
+ * ensuring that all contest-related context logic re-initializes and runs its effects on every refresh.
+ * Any effect in ContestProvider using useEffect with [] or [user] as deps will re-trigger on mount/refresh.
  */
 function App() {
   return (
     <AuthProvider>
-      <DeferredInitialization>
-        {/* ContestProvider will be injected per-route within Router for true per-page contest data loading */}
-        <Router />
-      </DeferredInitialization>
+      <ContestProvider>
+        <DeferredInitialization>
+          <Router />
+        </DeferredInitialization>
+      </ContestProvider>
     </AuthProvider>
   );
 }
