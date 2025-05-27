@@ -290,7 +290,22 @@ const AdminDashboard = () => {
       )}
 
       {selectedTab === 'contest' && (
-        <div className="contest-management">
+        <div className="contest-management" style={{ position: "relative" }}>
+          {/* Subtle spinner overlay to indicate loading when switching weeks */}
+          {loadingApps && apps.length > 0 && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 5,
+              background: "rgba(255,255,255,0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <div className="loading-spinner" />
+              <span style={{ marginLeft: 12, fontSize: 16, color: "#1976D2" }}>Loading new week...</span>
+            </div>
+          )}
           <div className="contest-status-controls">
             <h3>Contest Controls for {contestWeeks.find(w => w.id === selectedWeekId)?.name}</h3>
             <div className="status-buttons">
