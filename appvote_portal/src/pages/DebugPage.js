@@ -5,6 +5,10 @@ import supabase from '../config/supabaseClient';
 import ImageDebugger from '../utils/ImageDebugger';
 import { validateContestSchema, fixContestSchemaIssues } from '../utils/validateContestSchema';
 
+// Auth/Context
+import { useAuth } from '../contexts/AuthContext';
+import { useContest } from '../contexts/ContestContext';
+
 /**
  * Contest Schema Debugger component helps diagnose and fix schema issues
  */
