@@ -33,10 +33,23 @@ export function AuthProvider({ children }) {
      * - Always unwinds loading regardless of outcome or error.
      * - Defensively ends loading even if Supabase breaks or session is lost.
      * - Only blocks with loading spinner for true indeterminate initial load, never on recoverable/null session.
+     *
+     * Failsafe: If for ANY REASON loading hangs, forcibly clear loading after 7 seconds.
      */
     let isMounted = true;
+    let failsafeTimeout = null;
+
+    const clearLoadingFailsafe = () => {
+      // Defensive timeout to clear loading in case of all possible failures
+      if (isMounted) setLoading(false);
+    };
+
     const getInitialSession = async () => {
       setLoading(true); // always block at start
+
+      // Start failsafe: forcibly clear loading in case of deadlock
+      failsafeTimeout = setTimeout(clearLoadingFailsafe, 7000);
+
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
@@ -61,6 +74,7 @@ export function AuthProvider({ children }) {
       } finally {
         // ALWAYS clear loading, no matter what
         if (isMounted) setLoading(false);
+        if (failsafeTimeout) clearTimeout(failsafeTimeout);
       }
     };
 
@@ -104,6 +118,7 @@ export function AuthProvider({ children }) {
     return () => {
       isMounted = false;
       subscription?.unsubscribe();
+      if (failsafeTimeout) clearTimeout(failsafeTimeout);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // We intentionally omit 'user' from dependencies to avoid infinite loop
