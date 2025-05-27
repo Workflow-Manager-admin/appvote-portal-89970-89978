@@ -24,28 +24,42 @@ const AdminDashboard = () => {
   const [selectedTab, setSelectedTab] = useState('apps');
   const [selectedWeekId, setSelectedWeekId] = useState(null);
 
+  /**
+   * Robust restoration-dependent effect:
+   * Only fetch data when:
+   *  - user/context has completed restoration (loading === false AND userRole not null)
+   *  - isAdmin() check is reliable (userRole stabilized)
+   *  - contest context is loaded (hasValidContestStructure checked)
+   * Always re-fire after user/context restoration or contest week tab change (refresh safe).
+   */
   useEffect(() => {
-    // Ensure admin checks wait for userRole to be ready
-    if (loading || userRole === null) return; // Wait for auth to be loaded
+    if (loading || userRole === null) return;          // Wait for auth loading to finish & userRole to resolve.
+    if (!user || !isAdmin()) return;                   // Only allow fetch if definitely admin.
+    // If contest context not yet loaded, skip (prevents fetch loop on reload).
+    if (hasValidContestStructure && !currentWeek) return;
 
-    if (!isAdmin()) {
-      toast.error('You do not have permission to access this page');
+    // Guard: Only update week selection and fetch if a current week is available (or if contest mode is off).
+    if (currentWeek && selectedWeekId !== currentWeek.id) {
+      setSelectedWeekId(currentWeek.id);
+      // fetchApps will be triggered by selectedWeekId change
       return;
     }
 
-    if (currentWeek) {
-      setSelectedWeekId(currentWeek.id);
+    // If at least one week is available, or if running without contest mode
+    if (hasValidContestStructure && currentWeek) {
       fetchApps(currentWeek.id);
-    } else {
-      // If no contest structure, fetch all apps
+    } else if (!hasValidContestStructure) {
       fetchApps(null);
     }
+    // Else: Do not fetch yet.
+    // eslint-disable-next-line
   }, [
     isAdmin,
-    currentWeek,
     user,
     userRole,
-    loading
+    loading,
+    currentWeek,
+    hasValidContestStructure,
   ]);
 
   const fetchApps = async (weekId = selectedWeekId) => {
