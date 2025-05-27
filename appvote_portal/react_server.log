@@ -18,3 +18,20 @@ Note that the development build is not optimized.
 To create a production build, use npm run build.
 
 webpack compiled successfully
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/pages/Home.js
+  Line 166:6:  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array                                   react-hooks/exhaustive-deps
+  Line 170:5:  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/pages/Home.js
+  Line 166:6:  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array                                   react-hooks/exhaustive-deps
+  Line 170:5:  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+
+webpack compiled with 1 warning
