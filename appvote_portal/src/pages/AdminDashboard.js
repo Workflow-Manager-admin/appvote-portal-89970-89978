@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useContext } from "react";
-import { ContestContext } from "../contexts/ContestContext";
+import React, { useEffect, useState } from "react";
+import { useContest } from "../contexts/ContestContext";
 import { AuthContext } from "../contexts/AuthContext";
 import { supabase } from "../config/supabaseClient";
 
@@ -11,8 +11,8 @@ import { supabase } from "../config/supabaseClient";
  */
 
 function AdminDashboard() {
-  const { apps, fetchApps, contestLoading } = useContext(ContestContext);
-  const { user, loading: authLoading } = useContext(AuthContext); // "loading": true means auth restoration in-progress
+  const { fetchApps, contestLoading } = useContest();
+  const { user, loading: authLoading } = React.useContext(AuthContext); // "loading": true means auth restoration in-progress
   const [adminData, setAdminData] = useState([]);
   const [error, setError] = useState(null);
 
