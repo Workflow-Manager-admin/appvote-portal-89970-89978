@@ -23,7 +23,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
-  
+  // Marks whether initial session restoration completes (true = restoration attempted & ended, even if null user)
+  const [authReady, setAuthReady] = useState(false);
+
   // Use useRef instead of a dependency to avoid infinite loop
   const previousUserRef = useRef(null);
 
@@ -46,6 +48,7 @@ export function AuthProvider({ children }) {
 
     const getInitialSession = async () => {
       setLoading(true); // always block at start
+      setAuthReady(false);
 
       // Start failsafe: forcibly clear loading in case of deadlock
       failsafeTimeout = setTimeout(clearLoadingFailsafe, 7000);
@@ -74,6 +77,7 @@ export function AuthProvider({ children }) {
       } finally {
         // ALWAYS clear loading, no matter what
         if (isMounted) setLoading(false);
+        if (isMounted) setAuthReady(true);
         if (failsafeTimeout) clearTimeout(failsafeTimeout);
       }
     };
@@ -119,6 +123,7 @@ export function AuthProvider({ children }) {
       isMounted = false;
       subscription?.unsubscribe();
       if (failsafeTimeout) clearTimeout(failsafeTimeout);
+      setAuthReady(false); // indicates this context is no longer initalized; safe for remount
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // We intentionally omit 'user' from dependencies to avoid infinite loop
@@ -289,6 +294,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
+    authReady,
     register,
     login,
     logout,
