@@ -190,7 +190,10 @@ const AdminDashboard = () => {
     document.body.removeChild(link);
   };
 
-  if (loadingApps) {
+  // Only show full-page loading if the app list hasn't loaded yet (i.e. first app fetch)
+  const isInitialLoad = loadingApps && apps.length === 0;
+
+  if (isInitialLoad) {
     return (
       <div className="container">
         <div className="loading">Loading admin dashboard...</div>
@@ -352,7 +355,22 @@ const AdminDashboard = () => {
           <p>No apps have been submitted yet.</p>
         </div>
       ) : (
-        <div className="admin-table-container">
+        <div className="admin-table-container" style={{ position: "relative" }}>
+          {/* Subtle spinner overlay to indicate loading when switching weeks, but not on initial load */}
+          {loadingApps && apps.length > 0 && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 5,
+              background: "rgba(255,255,255,0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <div className="loading-spinner" />
+              <span style={{marginLeft: 12, fontSize: 16, color: "#1976D2"}}>Loading new week...</span>
+            </div>
+          )}
           <table className="admin-table">
             <thead>
               <tr>
