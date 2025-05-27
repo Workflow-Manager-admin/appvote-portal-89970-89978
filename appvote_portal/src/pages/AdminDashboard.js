@@ -50,6 +50,7 @@ const AdminDashboard = () => {
 
   const fetchApps = async (weekId = selectedWeekId) => {
     try {
+      setLoadingApps(true);
       let query = supabase
         .from('apps')
         .select(`
@@ -124,7 +125,7 @@ const AdminDashboard = () => {
       console.error('Error fetching apps:', error.message);
       toast.error('Failed to load app data');
     } finally {
-      setLoading(false);
+      setLoadingApps(false);
     }
   };
 
@@ -189,7 +190,7 @@ const AdminDashboard = () => {
     document.body.removeChild(link);
   };
 
-  if (loading) {
+  if (loadingApps) {
     return (
       <div className="container">
         <div className="loading">Loading admin dashboard...</div>
