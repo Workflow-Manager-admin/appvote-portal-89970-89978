@@ -7,13 +7,29 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContest } from '../contexts/ContestContext';
 import supabase, { getImageUrl } from '../config/supabaseClient';
 
+/**
+ * AddApp is robust to async restoration of user/context:
+ *  - UI gated until user and contest context fully restored (prevents flicker/incorrect state after refresh).
+ *  - Submission guarded by current context.
+ */
+// PUBLIC_INTERFACE
 const AddApp = () => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
-  const { user } = useAuth();
-  const { currentWeek, canSubmitApps, hasValidContestStructure } = useContest();
+
+  // Auth and contest context hooks
+  const { user, loading: authLoading } = useAuth();
+  const { currentWeek, canSubmitApps, hasValidContestStructure, loading: contestLoading } = useContest();
   const navigate = useNavigate();
+
+  // App is ready to render/submit only when user and contest context are available/restored
+  const ready =
+    !authLoading &&
+    !contestLoading &&
+    user &&
+    hasValidContestStructure &&
+    currentWeek;
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -36,9 +52,12 @@ const AddApp = () => {
     setImagePreview(previewUrl);
   };
 
+  // PUBLIC_INTERFACE
+  // onSubmit is robust: checks context/user *at trigger time*.
   const onSubmit = async (data) => {
-    if (!user) {
-      toast.error('You must be logged in to add an app');
+    // If somehow triggered before restoration (should never happen), block
+    if (authLoading || contestLoading || !user || !hasValidContestStructure || !currentWeek) {
+      toast.error('Required context is not yet restored. Please wait...');
       return;
     }
 
@@ -109,6 +128,8 @@ const AddApp = () => {
       }
 
       toast.success('App submitted successfully!');
+      reset();
+      setImagePreview(null);
       navigate('/');
     } catch (error) {
       console.error('Error submitting app:', error.message);
@@ -117,6 +138,41 @@ const AddApp = () => {
       setLoading(false);
     }
   };
+
+  // Render
+  if (authLoading || contestLoading) {
+    return (
+      <div className="container add-app-page">
+        <div className="loading-container">
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <div>Restoring user and contest context...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="container add-app-page">
+        <div className="locked-message">
+          <h2>You must be logged in to submit an app.</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // If contest structure is missing, block with message
+  if (!hasValidContestStructure || !currentWeek) {
+    return (
+      <div className="container add-app-page">
+        <div className="locked-message">
+          <h2>Contest data is not available. Please try again later.</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container add-app-page">
@@ -134,6 +190,7 @@ const AddApp = () => {
       )}
       
       <div className="add-app-form-container">
+        {/* Only enable form if ready and can submit */}
         <form onSubmit={handleSubmit(onSubmit)} className="add-app-form">
           <div className="form-group">
             <label htmlFor="name">App Name</label>
@@ -149,6 +206,7 @@ const AddApp = () => {
                 }
               })}
               className={errors.name ? 'input-error' : ''}
+              disabled={loading || !ready || !canSubmitApps()}
             />
             {errors.name && <p className="error-message">{errors.name.message}</p>}
           </div>
@@ -162,11 +220,12 @@ const AddApp = () => {
               {...register('link', { 
                 required: 'App URL is required',
                 pattern: {
-                  value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
+                  value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/,
                   message: 'Please enter a valid URL'
                 }
               })}
               className={errors.link ? 'input-error' : ''}
+              disabled={loading || !ready || !canSubmitApps()}
             />
             {errors.link && <p className="error-message">{errors.link.message}</p>}
           </div>
@@ -180,6 +239,7 @@ const AddApp = () => {
               {...register('image', { required: 'App image is required' })}
               onChange={handleImageChange}
               className={errors.image ? 'input-error' : ''}
+              disabled={loading || !ready || !canSubmitApps()}
             />
             {errors.image && <p className="error-message">{errors.image.message}</p>}
             <small className="form-hint">Max file size: 5MB. Recommended resolution: 800x600px.</small>
@@ -199,9 +259,13 @@ const AddApp = () => {
           <button 
             type="submit" 
             className="btn btn-submit" 
-            disabled={loading || !canSubmitApps()}
+            disabled={loading || !ready || !canSubmitApps()}
           >
-            {loading ? 'Submitting...' : canSubmitApps() ? 'Submit App' : 'Submissions Closed'}
+            {loading
+              ? 'Submitting...'
+              : canSubmitApps()
+                ? 'Submit App'
+                : 'Submissions Closed'}
           </button>
         </form>
       </div>
