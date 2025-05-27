@@ -10,8 +10,10 @@ import './App.css';
 // We need to defer pre-initialization logic (e.g., storage, schema setup) until user is authenticated.
 // So we lift this logic into a new component that runs after auth.
 
+import { useAuth } from './contexts/AuthContext';
 function DeferredInitialization({ children }) {
-  const { user, loading } = require('./contexts/AuthContext').useAuth();
+  // Use useAuth as a proper React hook
+  const { user, loading } = useAuth();
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
