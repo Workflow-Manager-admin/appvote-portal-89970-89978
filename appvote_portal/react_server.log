@@ -71,3 +71,29 @@ ERROR in ./src/pages/AdminDashboard.js 49:18-31
 export 'supabase' (imported as 'supabase') was not found in '../config/supabaseClient' (possible exports: default, getImageUrl, initializeStorage)
 
 webpack compiled with 2 errors
+Compiling...
+Failed to compile.
+
+Attempted import error: 'supabase' is not exported from '../config/supabaseClient' (imported as 'supabase').
+WARNING in [eslint] 
+src/pages/AdminDashboard.js
+  Line 3:10:  'useAuth' is defined but never used  no-unused-vars
+
+ERROR in ./src/pages/AdminDashboard.js 49:18-31
+export 'supabase' (imported as 'supabase') was not found in '../config/supabaseClient' (possible exports: default, getImageUrl, initializeStorage)
+
+ERROR in [eslint] 
+src/pages/AdminDashboard.js
+  Line 15:59:  'AuthContext' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 2 errors and 1 warning
+Compiling...
+Failed to compile.
+
+Attempted import error: 'supabase' is not exported from '../config/supabaseClient' (imported as 'supabase').
+ERROR in ./src/pages/AdminDashboard.js 49:18-31
+export 'supabase' (imported as 'supabase') was not found in '../config/supabaseClient' (possible exports: default, getImageUrl, initializeStorage)
+
+webpack compiled with 1 error
