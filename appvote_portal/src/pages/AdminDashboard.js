@@ -6,7 +6,8 @@ import supabase from '../config/supabaseClient';
 import ImageRepairTool from '../utils/ImageRepairTool';
 
 const AdminDashboard = () => {
-  const { isAdmin } = useAuth();
+  // Use Auth hook at the top level (per React rules)
+  const { isAdmin, user, loading, userRole } = useAuth();
   const { 
     contestWeeks, 
     currentWeek, 
@@ -17,7 +18,7 @@ const AdminDashboard = () => {
     hasValidContestStructure
   } = useContest();
   const [apps, setApps] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingApps, setLoadingApps] = useState(true);
   const [shareUrl, setShareUrl] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState('apps');
@@ -25,7 +26,6 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     // Ensure admin checks wait for userRole to be ready
-    const { user, loading, userRole } = useAuth();
     if (loading || userRole === null) return; // Wait for auth to be loaded
 
     if (!isAdmin()) {
@@ -43,10 +43,9 @@ const AdminDashboard = () => {
   }, [
     isAdmin,
     currentWeek,
-    // Use these dependencies for instant update after login/role switch
-    useAuth().user,
-    useAuth().userRole,
-    useAuth().loading
+    user,
+    userRole,
+    loading
   ]);
 
   const fetchApps = async (weekId = selectedWeekId) => {

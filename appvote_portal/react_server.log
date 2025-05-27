@@ -233,3 +233,27 @@ src/pages/AdminDashboard.js
 Search for the keywords to learn more about each error.
 
 webpack compiled with 1 error and 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/pages/AdminDashboard.js
+  Line 127:7:  'setLoading' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/components/Navbar.js
+  Line 19:10:  '_' is assigned a value but never used  no-unused-vars
+
+src/pages/AdminDashboard.js
+  Line 21:10:  'loadingApps' is assigned a value but never used                                                              no-unused-vars
+  Line 21:23:  'setLoadingApps' is assigned a value but never used                                                           no-unused-vars
+  Line 43:6:   React Hook useEffect has a missing dependency: 'fetchApps'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+ERROR in [eslint] 
+src/pages/AdminDashboard.js
+  Line 127:7:  'setLoading' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
