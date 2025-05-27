@@ -1,8 +1,13 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useContest } from '../contexts/ContestContext';
 import { toast } from 'react-toastify';
 
+/**
+ * PUBLIC_INTERFACE
+ * Navbar component renders the main navigation bar featuring navigation links.
+ * The active nav-link is highlighted based on the current route using NavLink from React Router.
+ */
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
   const { hasValidContestStructure } = useContest();
@@ -10,7 +15,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     const { error } = await logout();
-    
+
     if (error) {
       toast.error('Failed to log out. Please try again.');
     } else {
@@ -22,19 +27,40 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="container">
         <div className="navbar-content">
-          <Link to="/" className="logo">
+          <NavLink to="/" className="logo">
             <span className="logo-symbol">*</span> Kavia AI App Contest
-          </Link>
+          </NavLink>
           
           {user && (
             <div className="nav-links">
-              <Link to="/" className="nav-link">Home</Link>
-              <Link to="/add-app" className="nav-link">Add Your App</Link>
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/add-app"
+                className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
+              >
+                Add Your App
+              </NavLink>
               {hasValidContestStructure && (
-                <Link to="/contest-winners" className="nav-link">Contest Winners</Link>
+                <NavLink
+                  to="/contest-winners"
+                  className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
+                >
+                  Contest Winners
+                </NavLink>
               )}
               {isAdmin() && (
-                <Link to="/admin" className="nav-link admin-link">Admin Dashboard</Link>
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => 'nav-link admin-link' + (isActive ? ' active' : '')}
+                >
+                  Admin Dashboard
+                </NavLink>
               )}
               <button onClick={handleLogout} className="btn btn-logout">Logout</button>
             </div>
