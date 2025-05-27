@@ -162,6 +162,16 @@ body {
   transition: color 0.2s;
 }
 
+/* Highlight the active/selected navigation link */
+.nav-link.active {
+  color: var(--kavia-blue);
+  font-weight: 700;
+  text-decoration: underline;
+  background: rgba(25, 118, 210, 0.07);
+  border-radius: 4px;
+  padding: 6px 12px;
+}
+
 .nav-link:hover {
   color: var(--kavia-blue);
 }
