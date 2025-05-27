@@ -280,6 +280,19 @@ const DebugPage = () => {
     }
   };
 
+  // Show loading while context/user is being restored
+  if (authLoading || contestLoading) {
+    return (
+      <div className="container">
+        <h1>Storage Debugging</h1>
+        <div style={{ marginTop: 40, textAlign: 'center' }}>
+          <div className="loading-spinner" style={{ margin: 'auto' }} />
+          <div>Loading user session/context...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container">
       <h1>Storage Debugging</h1>
