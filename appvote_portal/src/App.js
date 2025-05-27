@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
-import { ContestProvider } from './contexts/ContestContext';
 import Router from './Router';
 import { initializeStorage } from './config/supabaseClient';
 import applyContestSchema from './utils/applyContestSchema';
 import { validateContestSchema } from './utils/validateContestSchema';
 import './App.css';
 
+/**
+ * Top-level App component initializes storage and schema, provides Auth context, and renders routes.
+ * ContestProvider is now delegated to be injected only around protected (authenticated) routes inside Router.js
+ */
 function App() {
   const [schemaChecked, setSchemaChecked] = useState(false);
 
@@ -53,9 +56,8 @@ function App() {
 
   return (
     <AuthProvider>
-      <ContestProvider>
-        <Router />
-      </ContestProvider>
+      {/* ContestProvider must only be present in authenticated routes! */}
+      <Router />
     </AuthProvider>
   );
 }
