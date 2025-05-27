@@ -9,7 +9,7 @@ import { toast } from 'react-toastify';
  * The active nav-link is highlighted based on the current route using NavLink from React Router.
  */
 const Navbar = () => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, userRole, loading, logout, isAdmin } = useAuth();
   const { hasValidContestStructure } = useContest();
   const navigate = useNavigate();
 
