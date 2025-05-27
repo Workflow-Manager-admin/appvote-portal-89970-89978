@@ -436,6 +436,52 @@ const Home = () => {
                   Visit App
                 </a>
                 
+                {/* Delete button for own apps */}
+                {isOwnApp(app.user_id) && (
+                  <button
+                    className="delete-button"
+                    onClick={async () => {
+                      if (window.confirm("Are you sure you want to delete this app? This action cannot be undone.")) {
+                        try {
+                          // Remove from apps table
+                          const { error } = await supabase
+                            .from('apps')
+                            .delete()
+                            .eq('id', app.id)
+                            .eq('user_id', user.id); // Additional frontend guard
+                          if (error) throw error;
+
+                          // Optionally, remove associated image if it's in supabase storage
+                          if (
+                            app.image_url &&
+                            app.image_url.includes('supabase.co/storage') &&
+                            app.image_url.includes('app_images')
+                          ) {
+                            // Get bucket and path from image_url. Assumed path is user.id/filename
+                            // Format: .../storage/v1/object/public/app_images/{user_id}/{filename}
+                            const urlParts = app.image_url.split('/app_images/');
+                            if (urlParts.length === 2) {
+                              const imgPath = urlParts[1].split('?')[0]; // Discard query params
+                              await supabase.storage.from('app_images').remove([imgPath]);
+                            }
+                          }
+
+                          toast.success('App deleted successfully');
+                          // Refresh the app list after deletion
+                          setApps(apps.filter(a => a.id !== app.id));
+                        } catch (err) {
+                          console.error("Failed to delete app:", err);
+                          toast.error("Failed to delete app");
+                        }
+                      }
+                    }}
+                    style={{ marginBottom: "8px", background: "#d9534f", color: "#fff", border: "none", borderRadius: "4px", padding: "6px 12px", cursor: "pointer" }}
+                    title="Delete this app"
+                  >
+                    Delete
+                  </button>
+                )}
+
                 {/* Don't allow voting for own apps */}
                 {!isOwnApp(app.user_id) && (
                   <button
