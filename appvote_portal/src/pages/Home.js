@@ -189,46 +189,33 @@ const Home = () => {
     [selectedWeekId, hasValidContestStructure, user, getActiveWeek]
   );
 
+  /**
+   * Robust effect: Always fire data fetch if user, contest context, and selectedWeekId are all available.
+   * Handles async hydration edge cases and ensures no fetch is skipped post-refresh or session restoration.
+   */
   useEffect(() => {
-    // Defensive: Always ensure loading resolves and fetches are triggered reliably.
-    // - Trigger all fetches as soon as a user session is fully available (including on page refresh, auto-login, direct login, or session restoration).
-    // - Avoid any situation where spinner could persist indefinitely.
-
-    // Wait only for 'user' to be explicitly null or an object (never undefined); block only if 'loading' in AuthContext is true
-    if (typeof user === 'undefined' || user === undefined) return;
+    // Only fetch if user is present, context is loaded, and selectedWeekId is valid
     if (!user || !user.id) {
-      // Not authenticated (including just logged out): clear everything and resolve loading, no fetches needed
+      // Not authenticated: clear everything; no fetches needed
       setApps([]);
       setUserVotes([]);
       setLoading(false);
       return;
     }
-
-    // If global AuthContext still loading, wait.
-    if (user.loading === true) return;
-
-    // If contest context is still loading or not yet hydrated, avoid early fetch
-    if (typeof hasValidContestStructure === 'undefined') return;
-    if (hasValidContestStructure && !selectedWeekId) return;
-
+    // Wait if context not hydrated or no selected week
+    if (!hasValidContestStructure || !selectedWeekId) return;
     setLoading(true);
-
-    // Other defensive checks for fetching logic
-    // Only call fetches if user is properly present (should always be if we pass above guards)
     fetchApps();
     fetchUserVotes();
     fetchUserProfile();
-
-    // No need for further guards; APIs will fire after session restoration, on login, and on every eligible session transition
-
+    // eslint-disable-next-line
   }, [
     fetchApps,
     fetchUserVotes,
     fetchUserProfile,
-    selectedWeekId,
+    user && user.id,
     hasValidContestStructure,
-    user,
-    user?.userRole,
+    selectedWeekId,
   ]);
 
   const handleVote = async (appId) => {
