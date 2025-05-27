@@ -30,92 +30,81 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Track if component is mounted to prevent state updates after unmount
     let isMounted = true;
-    
-    // Get initial session only once at mount
+
+    // Robust session restoration:
+    // 1. Always call setLoading(false) after trying to get session.
+    // 2. On mount, getSession() is used for initial boot, after which onAuthStateChange handles all future transitions.
     const getInitialSession = async () => {
       try {
         console.log('Getting initial auth session...');
-        setLoading(true); // Ensure loading is true at the start
+        setLoading(true);
+
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           console.error('Error getting session:', error.message);
-          if (isMounted) setLoading(false);
-          return;
         }
-        
-        console.log('Session retrieved:', session ? 'Session exists' : 'No session found');
-        
-        if (session && isMounted) {
-          console.log('User found in session:', session.user.email);
-          setUser(session.user);
-          // Fetch user role from the database and explicitly wait for it to complete
-          await fetchUserRole(session.user.id);
+
+        if (isMounted) {
+          if (session) {
+            console.log('User found in session:', session.user.email);
+            setUser(session.user);
+            // Fetch role in parallel but do NOT block the UI (spinner) on slow DB, only for login transitions
+            fetchUserRole(session.user.id);
+          } else {
+            setUser(null);
+            setUserRole(null);
+          }
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error.message);
       } finally {
-        // Only update state if component is still mounted
         if (isMounted) setLoading(false);
         console.log('Initial auth loading completed:', isMounted);
       }
     };
 
     getInitialSession();
-    
-    // Set up auth change listener - only respond to meaningful auth events
+
+    // Auth state change listener (for subsequent transitions)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session ? 'Session exists' : 'No session');
-        
-        // Only set loading true for specific auth events that require state changes
+        // Only set loading true for events that should trigger UI update
         const shouldSetLoading = ['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'TOKEN_REFRESHED'].includes(event);
-        
+
         if (shouldSetLoading && isMounted) {
           setLoading(true);
         }
-        
+
         if (session && isMounted) {
-          // Don't refetch user data if it's just a token refresh with the same user
+          // Don't refetch user data if same user is refreshed (for TOKEN_REFRESHED race)
           const isUserChange = !previousUserRef.current || previousUserRef.current.id !== session.user.id;
           previousUserRef.current = session.user;
-          
+
           console.log('User authenticated:', session.user.email);
           setUser(session.user);
-          
-          // Only fetch user role when the user actually changes
+
+          // Only block loading spinner for role fetch on real user change (otherwise snappy UI)
           if (isUserChange) {
             try {
-              // Maintain loading state until role is fetched
-              const roleLoaded = await fetchUserRole(session.user.id);
-              console.log('User role loaded:', roleLoaded ? 'Success' : 'Failed');
+              await fetchUserRole(session.user.id);
             } catch (error) {
               console.error('Error fetching user role during auth change:', error);
             } finally {
-              // Now we can safely turn off loading after role fetch attempt completes
-              if (shouldSetLoading && isMounted) {
-                setLoading(false);
-              }
+              if (shouldSetLoading && isMounted) setLoading(false);
             }
           } else {
-            // If we don't need to fetch the role, turn off loading immediately
-            if (shouldSetLoading && isMounted) {
-              setLoading(false);
-            }
+            if (shouldSetLoading && isMounted) setLoading(false);
           }
         } else if (isMounted) {
-          console.log('User signed out or session expired');
           setUser(null);
           setUserRole(null);
-          
-          // Turn off loading state for sign out
-          if (shouldSetLoading && isMounted) {
-            setLoading(false);
-          }
+          if (shouldSetLoading && isMounted) setLoading(false);
         }
       }
     );
-    
+
     return () => {
       isMounted = false;
       subscription?.unsubscribe();
