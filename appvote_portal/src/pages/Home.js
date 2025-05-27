@@ -6,13 +6,13 @@ import supabase, { getImageUrl } from '../config/supabaseClient';
 
 const Home = () => {
   const { user, isAdmin } = useAuth();
-  const { 
-    currentWeek, 
-    canVote, 
-    getAllWeeks, 
-    switchWeek, 
+  const {
+    currentWeek,
+    canVote,
+    getAllWeeks,
+    switchWeek,
     hasValidContestStructure,
-    getActiveWeek 
+    getActiveWeek,
   } = useContest();
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
@@ -39,11 +39,8 @@ const Home = () => {
     if (!user?.id) return;
 
     try {
-      let query = supabase
-        .from('votes')
-        .select('app_id')
-        .eq('user_id', user.id);
-        
+      let query = supabase.from('votes').select('app_id').eq('user_id', user.id);
+
       // Only filter by contest_week_id if we have a valid contest structure
       if (selectedWeekId && hasValidContestStructure) {
         query = query.eq('contest_week_id', selectedWeekId);
@@ -56,22 +53,24 @@ const Home = () => {
       if (error) {
         // If we get a column not found error, try without the contest_week_id filter
         if (error.code === '42703') {
-          console.warn('Column error when fetching votes - attempting without contest_week_id filter');
+          console.warn(
+            'Column error when fetching votes - attempting without contest_week_id filter'
+          );
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('votes')
             .select('app_id')
             .eq('user_id', user.id);
-            
+
           if (fallbackError) {
             throw fallbackError;
           }
-          
-          setUserVotes(fallbackData?.map(vote => vote.app_id) || []);
+
+          setUserVotes(fallbackData?.map((vote) => vote.app_id) || []);
         } else {
           throw error;
         }
       } else {
-        setUserVotes(data?.map(vote => vote.app_id) || []);
+        setUserVotes(data?.map((vote) => vote.app_id) || []);
       }
     } catch (error) {
       console.error('Error fetching user votes:', error.message);
@@ -95,72 +94,84 @@ const Home = () => {
     }
   }, [user]);
 
-  const fetchApps = useCallback(async () => {
-    try {
-      let query = supabase
-        .from('apps')
-        .select(`
-          id, 
-          name, 
-          link, 
-          image_url, 
-          created_at,
-          user_id,
-          contest_week_id,
-          profiles:user_id (username, registration_number)
-        `)
-        .order('created_at', { ascending: false });
-      
-      // If we have a selected week and the contest structure is valid, filter by week
-      if (selectedWeekId && hasValidContestStructure) {
-        console.log(`Fetching apps for week ID: ${selectedWeekId}`);
-        query = query.eq('contest_week_id', selectedWeekId);
-      } else if (user && hasValidContestStructure) {
-        // If user is logged in but no specific week is selected,
-        // try to fetch apps for the active contest week
-        const activeWeek = getActiveWeek();
-        if (activeWeek) {
-          console.log(`User logged in - defaulting to active week ID: ${activeWeek.id}`);
-          query = query.eq('contest_week_id', activeWeek.id);
-        } else {
-          // If no active week exists, fetch all apps
-          console.log('No active week found - fetching all apps');
-        }
-      } else {
-        // If no week is selected or contest structure is invalid, fetch all apps
-        console.log('No week selected or invalid contest structure - fetching all apps');
-      }
+  const fetchApps = useCallback(
+    async () => {
+      try {
+        let query = supabase
+          .from('apps')
+          .select(
+            `
+            id, 
+            name, 
+            link, 
+            image_url, 
+            created_at,
+            user_id,
+            contest_week_id,
+            profiles:user_id (username, registration_number)
+          `
+          )
+          .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
-
-      if (error) {
-        // Special handling for column does not exist error - likely schema issue
-        if (error.code === '42703') {
-          console.error('Column error when fetching apps - possible schema issue:', error.message);
-          // Try again without the contest_week_id filter
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('apps')
-            .select(`id, name, link, image_url, created_at, user_id, profiles:user_id (username, registration_number)`)
-            .order('created_at', { ascending: false });
-            
-          if (fallbackError) {
-            throw fallbackError;
+        // If we have a selected week and the contest structure is valid, filter by week
+        if (selectedWeekId && hasValidContestStructure) {
+          console.log(`Fetching apps for week ID: ${selectedWeekId}`);
+          query = query.eq('contest_week_id', selectedWeekId);
+        } else if (user && hasValidContestStructure) {
+          // If user is logged in but no specific week is selected,
+          // try to fetch apps for the active contest week
+          const activeWeek = getActiveWeek();
+          if (activeWeek) {
+            console.log(
+              `User logged in - defaulting to active week ID: ${activeWeek.id}`
+            );
+            query = query.eq('contest_week_id', activeWeek.id);
+          } else {
+            // If no active week exists, fetch all apps
+            console.log('No active week found - fetching all apps');
           }
-          
-          setApps(fallbackData || []);
         } else {
-          throw error;
+          // If no week is selected or contest structure is invalid, fetch all apps
+          console.log('No week selected or invalid contest structure - fetching all apps');
         }
-      } else {
-        setApps(data || []);
+
+        const { data, error } = await query;
+
+        if (error) {
+          // Special handling for column does not exist error - likely schema issue
+          if (error.code === '42703') {
+            console.error(
+              'Column error when fetching apps - possible schema issue:',
+              error.message
+            );
+            // Try again without the contest_week_id filter
+            const { data: fallbackData, error: fallbackError } = await supabase
+              .from('apps')
+              .select(
+                `id, name, link, image_url, created_at, user_id, profiles:user_id (username, registration_number)`
+              )
+              .order('created_at', { ascending: false });
+
+            if (fallbackError) {
+              throw fallbackError;
+            }
+
+            setApps(fallbackData || []);
+          } else {
+            throw error;
+          }
+        } else {
+          setApps(data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching apps:', error.message);
+        toast.error('Failed to load apps');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching apps:', error.message);
-      toast.error('Failed to load apps');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedWeekId, hasValidContestStructure, user, getActiveWeek]);
+    },
+    [selectedWeekId, hasValidContestStructure, user, getActiveWeek]
+  );
 
   useEffect(() => {
     // If contest structure is valid, wait for selectedWeekId
@@ -171,7 +182,14 @@ const Home = () => {
       fetchUserVotes();
       fetchUserProfile();
     }
-  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user]);
+  }, [
+    fetchApps,
+    fetchUserVotes,
+    fetchUserProfile,
+    selectedWeekId,
+    hasValidContestStructure,
+    user,
+  ]);
 
   const handleVote = async (appId) => {
     if (!user) {
@@ -199,7 +217,7 @@ const Home = () => {
           .delete()
           .eq('user_id', user.id)
           .eq('app_id', appId);
-          
+
         // Only add contest_week_id filter if we have valid contest structure
         if (hasValidContestStructure && selectedWeekId) {
           query = query.eq('contest_week_id', selectedWeekId);
@@ -210,13 +228,15 @@ const Home = () => {
         if (error) {
           // If error is related to contest_week_id column, try without it
           if (error.code === '42703' && error.message.includes('contest_week_id')) {
-            console.warn('Column error when removing vote - attempting without contest_week_id filter');
+            console.warn(
+              'Column error when removing vote - attempting without contest_week_id filter'
+            );
             const { error: fallbackError } = await supabase
               .from('votes')
               .delete()
               .eq('user_id', user.id)
               .eq('app_id', appId);
-              
+
             if (fallbackError) throw fallbackError;
           } else {
             throw error;
@@ -224,9 +244,9 @@ const Home = () => {
         }
 
         // Update local state
-        setUserVotes(userVotes.filter(id => id !== appId));
+        setUserVotes(userVotes.filter((id) => id !== appId));
         toast.success('Vote removed');
-        
+
         // Update the app list to reflect vote changes
         fetchApps();
       } catch (error) {
@@ -242,31 +262,31 @@ const Home = () => {
 
       try {
         // Add vote with or without contest week ID based on schema support
-        const voteData = { 
-          user_id: user.id, 
-          app_id: appId
+        const voteData = {
+          user_id: user.id,
+          app_id: appId,
         };
-        
+
         // Only include contest_week_id if the schema supports it
         if (hasValidContestStructure && selectedWeekId) {
           voteData.contest_week_id = selectedWeekId;
         }
-        
-        const { error } = await supabase
-          .from('votes')
-          .insert([voteData]);
+
+        const { error } = await supabase.from('votes').insert([voteData]);
 
         if (error) {
           // If the error is related to missing contest_week_id column, try without it
           if (error.code === '42703' && error.message.includes('contest_week_id')) {
-            console.warn('Column error when adding vote - attempting without contest_week_id');
-            const { error: fallbackError } = await supabase
-              .from('votes')
-              .insert([{ 
-                user_id: user.id, 
-                app_id: appId
-              }]);
-              
+            console.warn(
+              'Column error when adding vote - attempting without contest_week_id'
+            );
+            const { error: fallbackError } = await supabase.from('votes').insert([
+              {
+                user_id: user.id,
+                app_id: appId,
+              },
+            ]);
+
             if (fallbackError) throw fallbackError;
           } else {
             throw error;
@@ -276,7 +296,7 @@ const Home = () => {
         // Update local state
         setUserVotes([...userVotes, appId]);
         toast.success('Vote added');
-        
+
         // Update the app list to reflect vote changes
         fetchApps();
       } catch (error) {
@@ -289,6 +309,77 @@ const Home = () => {
   // Check if an app belongs to the current user
   const isOwnApp = (appUserId) => {
     return user?.id === appUserId;
+  };
+
+  // PUBLIC_INTERFACE
+  const handleDeleteApp = async (app) => {
+    if (!user) {
+      toast.error('You must be logged in to delete an app.');
+      return;
+    }
+    if (!isOwnApp(app.user_id)) {
+      toast.error('You can only delete your own apps.');
+      return;
+    }
+
+    const confirmation = window.confirm(
+      'Are you sure you want to delete this app? This action cannot be undone.'
+    );
+    if (!confirmation) return;
+
+    let dbDeleteError = null,
+      imgDeleteError = null;
+    try {
+      // Delete app row
+      const { error } = await supabase
+        .from('apps')
+        .delete()
+        .eq('id', app.id)
+        .eq('user_id', user.id); // frontend-side check
+
+      if (error) {
+        dbDeleteError = error.message || error.description || 'Unknown error';
+        toast.error(`Error deleting app: ${dbDeleteError}`);
+        return;
+      }
+
+      // Remove from storage if there's a Supabase image associated
+      if (
+        app.image_url &&
+        app.image_url.includes('supabase.co/storage') &&
+        app.image_url.includes('app_images')
+      ) {
+        // Extract the img path format: <...>/app_images/{user_id}/{filename}[?params]
+        const urlParts = app.image_url.split('/app_images/');
+        if (urlParts.length === 2) {
+          const imgPath = urlParts[1].split('?')[0];
+          try {
+            const { error: storageError } = await supabase.storage
+              .from('app_images')
+              .remove([imgPath]);
+            if (storageError) {
+              imgDeleteError = storageError.message || storageError.description;
+              toast.warn(
+                `App removed, but image could not be deleted from storage. (${imgDeleteError})`
+              );
+            }
+          } catch (catchError) {
+            imgDeleteError = catchError.message || catchError.description;
+            toast.warn(
+              `App removed, but image deletion failed. (${imgDeleteError})`
+            );
+          }
+        }
+      }
+
+      // Remove from UI
+      setApps((prev) => prev.filter((a) => a.id !== app.id));
+      toast.success('App deleted successfully.');
+    } catch (err) {
+      const details = err.message || err.description || 'Unknown error';
+      toast.error(`Failed to delete app: ${details}`);
+      return;
+    }
   };
 
   if (loading) {
@@ -312,22 +403,28 @@ const Home = () => {
   return (
     <div className="container home-page">
       <h1 className="page-title">App Showcase</h1>
-      
+
       {/* Contest week selection tabs - only show if contest structure exists */}
       {hasValidContestStructure && (
         <>
           <div className="contest-tabs">
-            {allWeeks.map(week => (
-              <button 
+            {allWeeks.map((week) => (
+              <button
                 key={week.id}
-                className={`contest-tab ${selectedWeekId === week.id ? 'active' : ''} ${week.status}`}
+                className={`contest-tab ${
+                  selectedWeekId === week.id ? 'active' : ''
+                } ${week.status}`}
                 onClick={() => handleWeekChange(week.id)}
               >
                 {week.name}
                 <span className={`tab-badge ${week.status}`}>
-                  {week.status === 'active' ? 'Active' : 
-                   week.status === 'ended' ? 'Ended' : 
-                   week.status === 'completed' ? 'Completed' : 'Upcoming'}
+                  {week.status === 'active'
+                    ? 'Active'
+                    : week.status === 'ended'
+                    ? 'Ended'
+                    : week.status === 'completed'
+                    ? 'Completed'
+                    : 'Upcoming'}
                 </span>
               </button>
             ))}
@@ -340,7 +437,10 @@ const Home = () => {
             ) : currentWeek?.status === 'ended' ? (
               <>This contest has ended. Winners will be announced soon.</>
             ) : currentWeek?.status === 'completed' ? (
-              <>This contest is complete. Check out the winners in the Contest Winners tab.</>
+              <>
+                This contest is complete. Check out the winners in the Contest
+                Winners tab.
+              </>
             ) : (
               <>This contest hasn't started yet.</>
             )}
@@ -350,21 +450,21 @@ const Home = () => {
 
       <p className="page-description">
         Discover and vote for your favorite apps. You can vote for up to 5 apps.
-        <span className="votes-count">
-          {` (${userVotes.length}/5 votes used)`}
-        </span>
+        <span className="votes-count">{` (${userVotes.length}/5 votes used)`}</span>
       </p>
 
       {apps.length === 0 ? (
         <div className="no-apps-message">
           <p>No apps have been submitted for {currentWeek?.name || 'this week'}.</p>
           {currentWeek?.status === 'active' ? (
-            <p>Be the first to <a href="/add-app">add your app</a>!</p>
+            <p>
+              Be the first to <a href="/add-app">add your app</a>!
+            </p>
           ) : (
             <p>
-              {currentWeek?.status === 'upcoming' 
-                ? "This contest hasn't started yet." 
-                : "This contest has ended."}
+              {currentWeek?.status === 'upcoming'
+                ? "This contest hasn't started yet."
+                : 'This contest has ended.'}
             </p>
           )}
         </div>
@@ -374,25 +474,27 @@ const Home = () => {
             <div className="app-card" key={app.id}>
               <div className="app-card-image">
                 {app.image_url ? (
-                  <img 
-                    src={app.image_url.includes('supabase.co/storage') ? 
-                      // If it's a Supabase URL, use our helper for possible path fixes
-                      getImageUrl('app_images', app.image_url.split('/').slice(-2).join('/')) || app.image_url : 
-                      // Otherwise use the URL as-is
-                      app.image_url
-                    } 
-                    alt={app.name} 
+                  <img
+                    src={
+                      app.image_url.includes('supabase.co/storage')
+                        ? // If it's a Supabase URL, use our helper for possible path fixes
+                          getImageUrl('app_images', app.image_url.split('/').slice(-2).join('/')) ||
+                          app.image_url
+                        : // Otherwise use the URL as-is
+                          app.image_url
+                    }
+                    alt={app.name}
                     onError={(e) => {
                       console.error(`Image load error for ${app.name}:`, e);
                       e.target.onerror = null;
-                      
+
                       // Try direct URL as fallback if we modified it
                       if (e.target.src !== app.image_url) {
                         console.log('Trying original URL as fallback:', app.image_url);
                         e.target.src = app.image_url;
                         return;
                       }
-                      
+
                       // If that fails too, try placeholder
                       try {
                         e.target.src = '/placeholder-app.png';
@@ -415,10 +517,10 @@ const Home = () => {
                   <div className="placeholder-image">No Image</div>
                 )}
               </div>
-              
+
               <div className="app-card-content">
                 <h3 className="app-name">{app.name}</h3>
-                
+
                 {/* Only show username for admin or if it's the user's own app */}
                 {(isAdmin() || isOwnApp(app.user_id)) && (
                   <p className="app-submitter">
@@ -426,22 +528,30 @@ const Home = () => {
                     {app.profiles?.registration_number && ` (${app.profiles.registration_number})`}
                   </p>
                 )}
-                
-                <a 
-                  href={app.link} 
-                  className="app-link" 
-                  target="_blank" 
+
+                <a
+                  href={app.link}
+                  className="app-link"
+                  target="_blank"
                   rel="noopener noreferrer"
                 >
                   Visit App
                 </a>
-                
+
                 {/* Delete button for own apps */}
                 {isOwnApp(app.user_id) && (
                   <button
                     className="delete-button"
                     onClick={() => handleDeleteApp(app)}
-                    style={{ marginBottom: "8px", background: "#d9534f", color: "#fff", border: "none", borderRadius: "4px", padding: "6px 12px", cursor: "pointer" }}
+                    style={{
+                      marginBottom: '8px',
+                      background: '#d9534f',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                    }}
                     title="Delete this app"
                   >
                     Delete
@@ -455,7 +565,7 @@ const Home = () => {
                     onClick={() => handleVote(app.id)}
                     disabled={userVotes.length >= 5 && !userVotes.includes(app.id)}
                   >
-                    {userVotes.includes(app.id) ? '✓ Voted' : 'Vote'}
+                    {userVotes.includes(app.id) ? '\u2713 Voted' : 'Vote'}
                   </button>
                 )}
               </div>
