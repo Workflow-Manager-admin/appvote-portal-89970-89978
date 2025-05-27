@@ -21,9 +21,8 @@ const Home = () => {
 
   // Set initial selected week when context loads
   useEffect(() => {
-    // Only process if user auth/role is loaded
-    if (!user || !user.id) return;
-    if (!currentWeek) return;
+    // Only process if user auth/role is loaded and contest context is hydrated
+    if (!user || !user.id || !currentWeek) return;
 
     // Always default to selecting the active week when a user is logged in
     const activeWeek = getActiveWeek();
@@ -33,6 +32,23 @@ const Home = () => {
       setSelectedWeekId(currentWeek.id);
     }
   }, [currentWeek, user, getActiveWeek]);
+
+  /**
+   * SPECIAL GUARD: If context and user arrive asynchronously, ensure selectedWeekId is reliably set as soon as both are ready.
+   * This effect runs if either user or currentWeek arrives after the other. (This prevents race-missed fetch.)
+   */
+  useEffect(() => {
+    if (!selectedWeekId && user && user.id && currentWeek) {
+      const activeWeek = getActiveWeek();
+      if (activeWeek) {
+        setSelectedWeekId(activeWeek.id);
+      } else {
+        setSelectedWeekId(currentWeek.id);
+      }
+    }
+    // Only fire if selectedWeekId is unset.
+    // eslint-disable-next-line
+  }, [user, currentWeek, getActiveWeek]);
 
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
