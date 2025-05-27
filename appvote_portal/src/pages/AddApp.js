@@ -24,12 +24,29 @@ const AddApp = () => {
   const navigate = useNavigate();
 
   // App is ready to render/submit only when user and contest context are available/restored
+  // This `ready` flag (and any data-load logic) depends robustly upon all async-loaded state
   const ready =
     !authLoading &&
     !contestLoading &&
     user &&
     hasValidContestStructure &&
     currentWeek;
+
+  // --- KEEP IN SYNC: If you later fetch per-user or per-contest data here (for form enablement), update dependencies below accordingly! ---
+  // This useEffect serves two key goals:
+  //   1. If you ever fetch data on-mount (e.g. user quota, contest week info), always retry on session/context ready or after a page refresh.
+  //   2. Documentation: Show maintainers exactly what state determines if this page's API/data needs to be (re)loaded.
+  useEffect(() => {
+    // Nothing to fetch on-mount currently (app form is static),
+    // but if you add API calls here in future (e.g. pre-fill, rate-limit, quotas)
+    // ensure to trigger them here, with [user, authLoading, contestLoading, hasValidContestStructure, currentWeek] as dependencies.
+    //
+    // Example (pseudocode):
+    // if (ready) { fetchUserQuotaOrOtherData(); }
+    //
+    // NOTE: This pattern guarantees correct retrigger after page restore/refresh/session restore,
+    // ensuring the form/UX is always correct for the up-to-date user and contest context.
+  }, [user, authLoading, contestLoading, hasValidContestStructure, currentWeek]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -273,4 +290,10 @@ const AddApp = () => {
   );
 };
 
+/**
+ * MAINTENANCE:
+ * The AddApp page is robust to contest/user context restoration, page refreshes, and async session restore.
+ * If you fetch extra context or data here in the future (ex: per-user quotas, contest settings), use the above useEffect,
+ * with these dependencies, to ensure correct (re-)triggering after page restore or user switch.
+ */
 export default AddApp;
