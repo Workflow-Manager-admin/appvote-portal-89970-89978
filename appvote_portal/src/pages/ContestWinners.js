@@ -84,7 +84,23 @@ const ContestWinners = () => {
         ))}
       </div>
 
-      <div className="contest-winners-content">
+      <div className="contest-winners-content" style={{ position: "relative" }}>
+        {/* Overlay a subtle loader over grid if loading but not initial load */}
+        {(loading || contestLoading) && contestWeeks && contestWeeks.length > 0 && (
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 5,
+            background: "rgba(255,255,255,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            <div className="loading-spinner" />
+            <span style={{marginLeft: 12, fontSize: 16, color: "#1976D2"}}>Loading new week...</span>
+          </div>
+        )}
+
         {currentWinners && currentWinners.length > 0 ? (
           <>
             <h2 className="week-title">{currentWeek?.name} Winners</h2>
