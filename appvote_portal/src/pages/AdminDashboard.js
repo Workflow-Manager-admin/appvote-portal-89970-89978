@@ -24,7 +24,10 @@ const AdminDashboard = () => {
   const [selectedWeekId, setSelectedWeekId] = useState(null);
 
   useEffect(() => {
-    // Listen to AuthContext's userRole and loading as well for instant role reactivity
+    // Ensure admin checks wait for userRole to be ready
+    const { user, loading, userRole } = useAuth();
+    if (loading || userRole === null) return; // Wait for auth to be loaded
+
     if (!isAdmin()) {
       toast.error('You do not have permission to access this page');
       return;
@@ -37,10 +40,13 @@ const AdminDashboard = () => {
       // If no contest structure, fetch all apps
       fetchApps(null);
     }
-  }, [isAdmin, currentWeek, // base
-      // Add AuthContext triggers so admin status takes effect without refresh:
-      // (userRole or loading change can promote to admin instantly)
-      useAuth().userRole, useAuth().loading
+  }, [
+    isAdmin,
+    currentWeek,
+    // Use these dependencies for instant update after login/role switch
+    useAuth().user,
+    useAuth().userRole,
+    useAuth().loading
   ]);
 
   const fetchApps = async (weekId = selectedWeekId) => {
