@@ -28,28 +28,24 @@ export function AuthProvider({ children }) {
   const previousUserRef = useRef(null);
 
   useEffect(() => {
-    // Track if component is mounted to prevent state updates after unmount
+    /**
+     * Ensure session restoration is robust:
+     * - Always unwinds loading regardless of outcome or error.
+     * - Defensively ends loading even if Supabase breaks or session is lost.
+     * - Only blocks with loading spinner for true indeterminate initial load, never on recoverable/null session.
+     */
     let isMounted = true;
-
-    // Robust session restoration:
-    // 1. Always call setLoading(false) after trying to get session.
-    // 2. On mount, getSession() is used for initial boot, after which onAuthStateChange handles all future transitions.
     const getInitialSession = async () => {
+      setLoading(true); // always block at start
       try {
-        console.log('Getting initial auth session...');
-        setLoading(true);
-
         const { data: { session }, error } = await supabase.auth.getSession();
-
         if (error) {
-          console.error('Error getting session:', error.message);
+          console.error("Error getting session:", error.message);
         }
-
         if (isMounted) {
-          if (session) {
-            console.log('User found in session:', session.user.email);
+          if (session && session.user) {
             setUser(session.user);
-            // Fetch role in parallel but do NOT block the UI (spinner) on slow DB, only for login transitions
+            // Don't await role loading here—UI should unblock on user state, not role
             fetchUserRole(session.user.id);
           } else {
             setUser(null);
@@ -57,50 +53,50 @@ export function AuthProvider({ children }) {
           }
         }
       } catch (error) {
-        console.error('Error in getInitialSession:', error.message);
+        console.error("Error in getInitialSession:", error.message);
+        if (isMounted) {
+          setUser(null);
+          setUserRole(null);
+        }
       } finally {
+        // ALWAYS clear loading, no matter what
         if (isMounted) setLoading(false);
-        console.log('Initial auth loading completed:', isMounted);
       }
     };
 
     getInitialSession();
 
-    // Auth state change listener (for subsequent transitions)
+    // Auth state listener – ALL SUBSEQUENT user transitions (SIGN IN/OUT/REFRESH)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session ? 'Session exists' : 'No session');
-        // Only set loading true for events that should trigger UI update
+        // Should only trigger after initial boot OR for actual sign in/out/refresh events
         const shouldSetLoading = ['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'TOKEN_REFRESHED'].includes(event);
 
-        if (shouldSetLoading && isMounted) {
-          setLoading(true);
-        }
+        if (shouldSetLoading && isMounted) setLoading(true);
+        try {
+          if (session && isMounted) {
+            // Same user, skip role refetch for silent refresh
+            const isUserChange = !previousUserRef.current || previousUserRef.current.id !== session.user.id;
+            previousUserRef.current = session.user;
+            setUser(session.user);
 
-        if (session && isMounted) {
-          // Don't refetch user data if same user is refreshed (for TOKEN_REFRESHED race)
-          const isUserChange = !previousUserRef.current || previousUserRef.current.id !== session.user.id;
-          previousUserRef.current = session.user;
-
-          console.log('User authenticated:', session.user.email);
-          setUser(session.user);
-
-          // Only block loading spinner for role fetch on real user change (otherwise snappy UI)
-          if (isUserChange) {
-            try {
-              await fetchUserRole(session.user.id);
-            } catch (error) {
-              console.error('Error fetching user role during auth change:', error);
-            } finally {
-              if (shouldSetLoading && isMounted) setLoading(false);
+            if (isUserChange) {
+              try {
+                await fetchUserRole(session.user.id);
+              } catch (err) {
+                console.error('Error fetching user role during auth change:', err);
+              }
             }
-          } else {
+            // Defensive: always clear loading at end
+            if (shouldSetLoading && isMounted) setLoading(false);
+          } else if (isMounted) {
+            setUser(null);
+            setUserRole(null);
             if (shouldSetLoading && isMounted) setLoading(false);
           }
-        } else if (isMounted) {
-          setUser(null);
-          setUserRole(null);
-          if (shouldSetLoading && isMounted) setLoading(false);
+        } catch (err) {
+          console.error("Auth listener exception:", err);
+          if (isMounted) setLoading(false);
         }
       }
     );
