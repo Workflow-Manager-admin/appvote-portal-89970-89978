@@ -103,9 +103,8 @@ function App() {
   return (
     <AuthProvider>
       <DeferredInitialization>
-        <ContestProvider>
-          <Router />
-        </ContestProvider>
+        {/* ContestProvider will be injected per-route within Router for true per-page contest data loading */}
+        <Router />
       </DeferredInitialization>
     </AuthProvider>
   );
