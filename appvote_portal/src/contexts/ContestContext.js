@@ -4,6 +4,14 @@ import { useAuth } from './AuthContext';
 import supabase from '../config/supabaseClient';
 
 /**
+ * New utility to merge auth loading into contest context loading.
+ * Will ensure contest loading still reflects session restoration status.
+ */
+function useMergedLoading(contestLoading, authLoading) {
+  // Block mount if either the session or contest is restoring.
+  return contestLoading || authLoading;
+}
+/**
  * Context for managing contest weeks, active contest, and winners
  * Provides data and functions related to the contest state throughout the app
  */
