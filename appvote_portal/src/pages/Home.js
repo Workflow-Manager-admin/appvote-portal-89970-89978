@@ -449,7 +449,12 @@ const Home = () => {
                             .delete()
                             .eq('id', app.id)
                             .eq('user_id', user.id); // Additional frontend guard
-                          if (error) throw error;
+                          if (error) {
+                            console.error('Supabase delete error:', error);
+                            // Show full error message if available
+                            toast.error(`Failed to delete app: ${error.message || error.description || "Unknown error"}`);
+                            return;
+                          }
 
                           // Optionally, remove associated image if it's in supabase storage
                           if (
@@ -462,7 +467,14 @@ const Home = () => {
                             const urlParts = app.image_url.split('/app_images/');
                             if (urlParts.length === 2) {
                               const imgPath = urlParts[1].split('?')[0]; // Discard query params
-                              await supabase.storage.from('app_images').remove([imgPath]);
+                              try {
+                                const { error: imgDelError } = await supabase.storage.from('app_images').remove([imgPath]);
+                                if (imgDelError) {
+                                  console.warn("Could not remove associated image from storage:", imgDelError.message || imgDelError.description);
+                                }
+                              } catch (imgDelExc) {
+                                console.warn("Exception removing image:", imgDelExc);
+                              }
                             }
                           }
 
@@ -470,8 +482,8 @@ const Home = () => {
                           // Refresh the app list after deletion
                           setApps(apps.filter(a => a.id !== app.id));
                         } catch (err) {
-                          console.error("Failed to delete app:", err);
-                          toast.error("Failed to delete app");
+                          console.error("Exception thrown during app deletion:", err);
+                          toast.error(`Failed to delete app: ${err.message || err.description || "Unknown error"}`);
                         }
                       }
                     }}
