@@ -199,17 +199,18 @@ const DebugPage = () => {
   }
   // Defensive: fallback if hooks error (e.g., missing provider)
 
-  // Effect: Only run when user/context is loaded (to survive async restoration/hydration on refresh)
+  // Effect: Only run data-fetch/diagnostics when both context and auth are ready,
+  // and always re-trigger if either transitions from loading to ready (after refresh/context restoration)
   useEffect(() => {
-    // Wait until both user and contest context are ready
-    if (authLoading || contestLoading) return; // Don't run until done
+    const ready = !authLoading && !contestLoading;
+    if (!ready) return; // Wait until both auth/context are fully ready
     if (!user) {
       setBucketStatus('User not authenticated.');
       setFiles([]);
       return;
     }
 
-    // Check if app_images bucket exists
+    // Diagnostic: always re-check storage after readiness transitions to true
     const checkBucket = async () => {
       try {
         const { data: buckets, error } = await supabase.storage.listBuckets();
@@ -243,8 +244,8 @@ const DebugPage = () => {
     };
 
     checkBucket();
-  // Only re-run when user/context is loaded or their readiness changes
-  }, [user, authLoading, contest, contestLoading]);
+  // Ensure this effect depends on readiness transition, always re-triggers after refresh/context restore
+  }, [authLoading, contestLoading, user]);
   
   const handleTestUpload = async () => {
     // Robust: Don't allow if not authenticated/ready
