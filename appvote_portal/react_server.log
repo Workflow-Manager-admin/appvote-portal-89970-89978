@@ -2,9 +2,9 @@
 > kavia-ai-app-contest@0.1.0 start
 > react-scripts start
 
-(node:10908) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:11143) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-(node:10908) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:11143) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 Starting the development server...
 
 Compiled with warnings.
@@ -21,10 +21,6 @@ src/pages/ContestWinners.js
 
 src/pages/DebugPage.js
   Line 197:5:  'contest' is assigned a value but never used  no-unused-vars
-
-src/pages/Home.js
-  Line 166:6:  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array                                   react-hooks/exhaustive-deps
-  Line 170:5:  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
 
 src/utils/applyContestSchema.js
   Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
@@ -50,10 +46,6 @@ src/pages/ContestWinners.js
 
 src/pages/DebugPage.js
   Line 197:5:  'contest' is assigned a value but never used  no-unused-vars
-
-src/pages/Home.js
-  Line 166:6:  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array                                   react-hooks/exhaustive-deps
-  Line 170:5:  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
 
 src/utils/applyContestSchema.js
   Line 14:19:  'tablesData' is assigned a value but never used   no-unused-vars
