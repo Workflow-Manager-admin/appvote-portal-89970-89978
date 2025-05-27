@@ -329,7 +329,7 @@ export function ContestProvider({ children }) {
 
   // Check if we have valid contest data structure
   // More comprehensive check to confirm schema is properly set up
-  const hasValidContestStructure = contestWeeks && contestWeeks.length > 0 && !loading;
+  const hasValidContestStructure = contestWeeks && contestWeeks.length > 0 && !mergedLoading;
 
   const mergedLoading = useMergedLoading(contestLoading, authLoading);
 
