@@ -21,3 +21,18 @@ webpack compiled successfully
 Compiling...
 Compiled successfully!
 webpack compiled successfully
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/pages/Home.js
+  Line 443:36:  'handleDeleteApp' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+ERROR in [eslint] 
+src/pages/Home.js
+  Line 443:36:  'handleDeleteApp' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error
