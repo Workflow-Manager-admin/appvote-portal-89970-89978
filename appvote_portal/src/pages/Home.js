@@ -393,7 +393,10 @@ const Home = () => {
     }
   };
 
-  if (loading) {
+  // Only display full-page loading for first load; for subsequent loads, show a subtle indicator
+  const isInitialLoad = loading && apps.length === 0;
+
+  if (isInitialLoad) {
     return (
       <div className="container">
         <div className="loading">Loading apps...</div>
@@ -405,7 +408,8 @@ const Home = () => {
   const handleWeekChange = (weekId) => {
     setSelectedWeekId(Number(weekId));
     switchWeek(Number(weekId));
-    setLoading(true);
+    // Instead of setting loading to true which would blank the UI, we will just show a subtle overlay
+    // setLoading(true); // REMOVE THIS LINE
   };
 
   // Get all available contest weeks
