@@ -2,9 +2,9 @@
 > kavia-ai-app-contest@0.1.0 start
 > react-scripts start
 
-(node:3313) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:840) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-(node:3313) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:840) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 Starting the development server...
 
 Compiled successfully!
@@ -19,5 +19,37 @@ To create a production build, use npm run build.
 
 webpack compiled successfully
 Compiling...
-Compiled successfully!
-webpack compiled successfully
+Failed to compile.
+
+[eslint] 
+src/contexts/ContestContext.js
+  Line 320:6:   'isLoading' is not defined       no-undef
+  Line 321:6:   'isInitializing' is not defined  no-undef
+  Line 322:5:   'isReady' is not defined         no-undef
+  Line 323:6:   'error' is not defined           no-undef
+  Line 327:5:   'isInitializing' is not defined  no-undef
+  Line 328:5:   'isLoading' is not defined       no-undef
+  Line 329:5:   'isReady' is not defined         no-undef
+  Line 330:5:   'error' is not defined           no-undef
+  Line 336:14:  'isLoading' is not defined       no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/contexts/ContestContext.js
+  Line 25:10:  'loading' is assigned a value but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/contexts/ContestContext.js
+  Line 320:6:   'isLoading' is not defined       no-undef
+  Line 321:6:   'isInitializing' is not defined  no-undef
+  Line 322:5:   'isReady' is not defined         no-undef
+  Line 323:6:   'error' is not defined           no-undef
+  Line 327:5:   'isInitializing' is not defined  no-undef
+  Line 328:5:   'isLoading' is not defined       no-undef
+  Line 329:5:   'isReady' is not defined         no-undef
+  Line 330:5:   'error' is not defined           no-undef
+  Line 336:14:  'isLoading' is not defined       no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning

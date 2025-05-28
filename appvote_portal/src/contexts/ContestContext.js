@@ -129,7 +129,7 @@ export function ContestProvider({ children }) {
 
   // Switch to a different contest week (for admin or display)
   const switchWeek = (weekId) => {
-    const week = contestWeeks.find(w => w.id === weekId);
+    const week = contestWeeks.find((w) => w.id === weekId);
     if (week) {
       setCurrentWeek(week);
       return true;
@@ -147,8 +147,8 @@ export function ContestProvider({ children }) {
     try {
       // If setting a week to active, make sure no other week is active
       if (status === 'active') {
-        const activeWeek = contestWeeks.find(w => w.status === 'active');
-        
+        const activeWeek = contestWeeks.find((w) => w.status === 'active');
+
         // If there's already an active week and it's not the one we're updating
         if (activeWeek && activeWeek.id !== weekId) {
           const { error: deactivateError } = await supabase
@@ -163,10 +163,14 @@ export function ContestProvider({ children }) {
       // Update the target week's status
       const { error } = await supabase
         .from('contest_weeks')
-        .update({ 
+        .update({
           status,
-          ...(status === 'active' ? { start_date: new Date().toISOString() } : {}),
-          ...(status === 'ended' || status === 'completed' ? { end_date: new Date().toISOString() } : {})
+          ...(status === 'active'
+            ? { start_date: new Date().toISOString() }
+            : {}),
+          ...(status === 'ended' || status === 'completed'
+            ? { end_date: new Date().toISOString() }
+            : {}),
         })
         .eq('id', weekId);
 
@@ -179,12 +183,12 @@ export function ContestProvider({ children }) {
         .order('id', { ascending: true });
 
       if (fetchError) throw fetchError;
-      
+
       setContestWeeks(updatedWeeks || []);
-      
+
       // Update current week if it's the one being modified
       if (currentWeek?.id === weekId) {
-        const updatedWeek = updatedWeeks?.find(w => w.id === weekId);
+        const updatedWeek = updatedWeeks?.find((w) => w.id === weekId);
         if (updatedWeek) {
           setCurrentWeek(updatedWeek);
         }
@@ -208,7 +212,7 @@ export function ContestProvider({ children }) {
 
     try {
       // Check if contest week is in ended state
-      const week = contestWeeks.find(w => w.id === weekId);
+      const week = contestWeeks.find((w) => w.id === weekId);
       if (!week) {
         toast.error('Contest week not found');
         return false;
@@ -222,7 +226,10 @@ export function ContestProvider({ children }) {
       // Check if a winner already exists for this position
       const existingWinner = Object.values(winners)
         .flat()
-        .find(w => w.contest_week_id === weekId && w.position === position);
+        .find(
+          (w) =>
+            w.contest_week_id === weekId && w.position === position
+        );
 
       if (existingWinner) {
         // Update existing winner
@@ -236,11 +243,13 @@ export function ContestProvider({ children }) {
         // Insert new winner
         const { error } = await supabase
           .from('contest_winners')
-          .insert([{ 
-            contest_week_id: weekId, 
-            app_id: appId, 
-            position 
-          }]);
+          .insert([
+            {
+              contest_week_id: weekId,
+              app_id: appId,
+              position,
+            },
+          ]);
 
         if (error) throw error;
       }
@@ -254,7 +263,7 @@ export function ContestProvider({ children }) {
           .eq('contest_week_id', weekId);
 
         if (countError) throw countError;
-        
+
         if (winnersCount?.length === 3) {
           // Update contest status to completed
           const { error: updateError } = await supabase
@@ -300,18 +309,31 @@ export function ContestProvider({ children }) {
 
   // Get active contest week
   const getActiveWeek = () => {
-    return contestWeeks.find(week => week.status === 'active') || null;
+    return contestWeeks.find((week) => week.status === 'active') || null;
   };
 
-  // Check if we have valid contest data structure
-  // More comprehensive check to confirm schema is properly set up
-  const hasValidContestStructure = contestWeeks && contestWeeks.length > 0 && !loading;
+  // Updated: context-wide status and contract
+  // include new flags and expose error, maintain old API contract for all features
+  const hasValidContestStructure =
+    contestWeeks &&
+    contestWeeks.length > 0 &&
+    !isLoading &&
+    !isInitializing &&
+    isReady &&
+    !error;
 
   const value = {
-    loading,
+    // --- status/extras for robust consumption and UI ---
+    isInitializing,
+    isLoading,
+    isReady,
+    error,
+
+    // --- previous contract (legacy) ---
     contestWeeks,
     currentWeek,
     winners,
+    loading: isLoading, // alias for old code (previously: loading)
     switchWeek,
     updateContestStatus,
     selectWinner,
