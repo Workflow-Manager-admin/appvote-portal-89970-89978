@@ -15,31 +15,31 @@ import { useEffect, useRef } from 'react';
  * Component responsible for redirecting the user after first-time login, once all contexts are ready.
  */
 function RouterRedirector() {
+  // Handles post-login redirect only for a fresh login (not session restore)
   const { user, loading, isReady: authReady } = useAuth();
   const { isReady: contestReady, currentWeek } = useContest();
   const navigate = useNavigate();
-
-  const wasLoggedIn = useRef(!!user);
   const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Only proceed if both contexts are ready and user is present
+    // Only after both context providers are ready and login is fresh
     if (!authReady || !contestReady) return;
     if (!user || loading) return;
     if (hasRedirected.current) return;
-    if (!wasLoggedIn.current && user) {
+    // Check the explicit sessionStorage flag
+    const freshLogin = sessionStorage.getItem('freshLogin');
+    if (freshLogin === 'true') {
       if (currentWeek && currentWeek.id) {
         navigate(`/contest/${currentWeek.id}`, { replace: true });
-        hasRedirected.current = true;
       } else {
         navigate('/', { replace: true });
-        hasRedirected.current = true;
       }
+      hasRedirected.current = true;
+      sessionStorage.removeItem('freshLogin');
     }
-    wasLoggedIn.current = !!user;
   }, [user, loading, authReady, contestReady, currentWeek, navigate]);
 
-  return null; // This component does not render anything
+  return null;
 }
 
 /**
