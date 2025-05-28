@@ -23,12 +23,23 @@ export function ContestProvider({ children }) {
   const [currentWeek, setCurrentWeek] = useState(null);
   const [winners, setWinners] = useState({});
   const [loading, setLoading] = useState(true);
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
-  // Fetch contest weeks data
+  // Fetch contest weeks data and winners on mount and whenever user changes (login/logout)
   useEffect(() => {
+    // Always show spinner on attempted fetch
+    setLoading(true);
+
     const fetchContestWeeks = async () => {
       try {
+        // If unauthenticated, clear state and stop loading
+        if (!user) {
+          setContestWeeks([]);
+          setCurrentWeek(null);
+          setWinners({});
+          setLoading(false);
+          return;
+        }
         const { data, error } = await supabase
           .from('contest_weeks')
           .select('*')
@@ -42,56 +53,113 @@ export function ContestProvider({ children }) {
         if (activeWeek) {
           setCurrentWeek(activeWeek);
         } else {
-          // If no active week, we'll use the first upcoming week
-          // or the most recently ended week
+          // If no active week, use first upcoming or most recently ended
           const upcomingWeek = data?.find(week => week.status === 'upcoming');
-          const endedWeeks = data?.filter(week => week.status === 'ended' || week.status === 'completed');
-          const mostRecentEndedWeek = endedWeeks?.length 
-            ? endedWeeks.sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0]
-            : null;
-
+          const endedWeeks = data?.filter(
+            week => week.status === 'ended' || week.status === 'completed'
+          );
+          const mostRecentEndedWeek =
+            endedWeeks?.length
+              ? endedWeeks.sort(
+                  (a, b) => new Date(b.end_date) - new Date(a.end_date)
+                )[0]
+              : null;
           setCurrentWeek(upcomingWeek || mostRecentEndedWeek || (data?.length ? data[0] : null));
         }
       } catch (error) {
         console.error('Error fetching contest weeks:', error.message);
         toast.error('Failed to load contest data');
+        setContestWeeks([]);
+        setCurrentWeek(null);
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchWinners = async () => {
+      try {
+        if (!user) {
+          setWinners({});
+          return;
+        }
+        const { data, error } = await supabase
+          .from('contest_winners')
+          .select(`
+            id,
+            position,
+            contest_week_id,
+            app_id,
+            apps:app_id (
+              id,
+              name,
+              link,
+              image_url,
+              user_id,
+              profiles:user_id (username, registration_number)
+            )
+          `)
+          .order('position', { ascending: true });
+
+        if (error) throw error;
+
+        // Organize winners by contest week
+        const winnersByWeek = {};
+        data?.forEach(winner => {
+          if (!winnersByWeek[winner.contest_week_id]) {
+            winnersByWeek[winner.contest_week_id] = [];
+          }
+          winnersByWeek[winner.contest_week_id].push(winner);
+        });
+
+        setWinners(winnersByWeek);
+      } catch (error) {
+        console.error('Error fetching winners:', error.message);
+        setWinners({});
+      }
+    };
+
+    // Fetch both contest weeks and winners (don't wait for subscription to trigger)
     fetchContestWeeks();
     fetchWinners();
 
-    // Subscribe to changes in contest_weeks table
+    // Subscriptions for real-time update: re-fetch as previously
     const contestSubscription = supabase
       .channel('custom-contest-channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'contest_weeks' }, 
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contest_weeks' },
         () => {
           fetchContestWeeks();
-      })
+        }
+      )
       .subscribe();
 
-    // Subscribe to changes in contest_winners table
     const winnersSubscription = supabase
       .channel('custom-winners-channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'contest_winners' }, 
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contest_winners' },
         () => {
           fetchWinners();
-      })
+        }
+      )
       .subscribe();
 
     return () => {
       contestSubscription.unsubscribe();
       winnersSubscription.unsubscribe();
     };
-  }, []);
+    // user as dependency for re-fetching on login/logout
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-  // Fetch contest winners for all weeks
+  // Fetch contest winners for all weeks -- must be available to admin winner selection, etc.
   const fetchWinners = async () => {
     try {
+      if (!user) {
+        setWinners({});
+        return;
+      }
       const { data, error } = await supabase
         .from('contest_winners')
         .select(`
@@ -112,7 +180,6 @@ export function ContestProvider({ children }) {
 
       if (error) throw error;
 
-      // Organize winners by contest week
       const winnersByWeek = {};
       data?.forEach(winner => {
         if (!winnersByWeek[winner.contest_week_id]) {
@@ -124,6 +191,7 @@ export function ContestProvider({ children }) {
       setWinners(winnersByWeek);
     } catch (error) {
       console.error('Error fetching winners:', error.message);
+      setWinners({});
     }
   };
 
@@ -148,7 +216,7 @@ export function ContestProvider({ children }) {
       // If setting a week to active, make sure no other week is active
       if (status === 'active') {
         const activeWeek = contestWeeks.find(w => w.status === 'active');
-        
+
         // If there's already an active week and it's not the one we're updating
         if (activeWeek && activeWeek.id !== weekId) {
           const { error: deactivateError } = await supabase
@@ -163,7 +231,7 @@ export function ContestProvider({ children }) {
       // Update the target week's status
       const { error } = await supabase
         .from('contest_weeks')
-        .update({ 
+        .update({
           status,
           ...(status === 'active' ? { start_date: new Date().toISOString() } : {}),
           ...(status === 'ended' || status === 'completed' ? { end_date: new Date().toISOString() } : {})
@@ -179,9 +247,9 @@ export function ContestProvider({ children }) {
         .order('id', { ascending: true });
 
       if (fetchError) throw fetchError;
-      
+
       setContestWeeks(updatedWeeks || []);
-      
+
       // Update current week if it's the one being modified
       if (currentWeek?.id === weekId) {
         const updatedWeek = updatedWeeks?.find(w => w.id === weekId);
@@ -236,10 +304,10 @@ export function ContestProvider({ children }) {
         // Insert new winner
         const { error } = await supabase
           .from('contest_winners')
-          .insert([{ 
-            contest_week_id: weekId, 
-            app_id: appId, 
-            position 
+          .insert([{
+            contest_week_id: weekId,
+            app_id: appId,
+            position
           }]);
 
         if (error) throw error;
@@ -254,7 +322,7 @@ export function ContestProvider({ children }) {
           .eq('contest_week_id', weekId);
 
         if (countError) throw countError;
-        
+
         if (winnersCount?.length === 3) {
           // Update contest status to completed
           const { error: updateError } = await supabase
