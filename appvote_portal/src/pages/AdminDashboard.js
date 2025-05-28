@@ -5,8 +5,9 @@ import { useContest } from '../contexts/ContestContext';
 import supabase from '../config/supabaseClient';
 import ImageRepairTool from '../utils/ImageRepairTool';
 
+// PUBLIC_INTERFACE
 const AdminDashboard = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isReady: authReady } = useAuth();
   const { 
     contestWeeks, 
     currentWeek, 
@@ -14,8 +15,10 @@ const AdminDashboard = () => {
     updateContestStatus,
     selectWinner,
     getWinnersForWeek,
-    hasValidContestStructure
+    hasValidContestStructure,
+    isReady: contestReady
   } = useContest();
+
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [shareUrl, setShareUrl] = useState('');
@@ -24,11 +27,11 @@ const AdminDashboard = () => {
   const [selectedWeekId, setSelectedWeekId] = useState(null);
 
   useEffect(() => {
+    if (!(authReady && contestReady)) return;
     if (!isAdmin()) {
       toast.error('You do not have permission to access this page');
       return;
     }
-    
     if (currentWeek) {
       setSelectedWeekId(currentWeek.id);
       fetchApps(currentWeek.id);
@@ -36,7 +39,7 @@ const AdminDashboard = () => {
       // If no contest structure, fetch all apps
       fetchApps(null);
     }
-  }, [isAdmin, currentWeek]);
+  }, [isAdmin, currentWeek, authReady, contestReady]);
 
   const fetchApps = async (weekId = selectedWeekId) => {
     try {
