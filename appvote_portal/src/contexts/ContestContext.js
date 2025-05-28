@@ -34,8 +34,11 @@ export function ContestProvider({ children }) {
   const [error, setError] = useState(null);
 
   // Use AuthContext to check readiness. AuthContext loading === false == isReady.
-  const { isAdmin, loading: authLoading } = useAuth();
-  const authIsReady = !authLoading;
+  const authContext = useAuth();
+  const { isAdmin, loading: authLoading } = authContext;
+  // "isReady" available for explicit checks if AuthContext adds this API later
+  // Otherwise fallback on "loading === false" (hydrated once loading=false)
+  const authIsReady = (typeof authContext.isReady === "boolean" ? authContext.isReady : !authLoading);
   const hasInitializedRef = useRef(false);
 
   // This tracks if we have received valid contest weeks at least once (via fetch or realtime)
