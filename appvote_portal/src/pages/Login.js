@@ -28,6 +28,8 @@ const Login = () => {
         toast.error(error.message || 'Failed to sign in');
       } else {
         toast.success('Signed in successfully');
+        // Mark this as a fresh login for RouterRedirector redirect logic
+        sessionStorage.setItem('freshLogin', 'true');
         // Navigation will happen automatically via the useEffect
       }
     } catch (error) {
