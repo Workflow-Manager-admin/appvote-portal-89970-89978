@@ -3,47 +3,52 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import supabase, { getImageUrl } from '../config/supabaseClient';
 
+/**
+ * Home page of the portal showing apps and handling voting logic.
+ * Ensures all API/data initialization is triggered properly on first load and refresh.
+ */
 const Home = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Removed unused userProfile state
 
-  // Define the fetch functions with useCallback to avoid recreation on each render
-  const fetchUserVotes = useCallback(async () => {
-    if (!user?.id) return;
-
+  // Fetch user votes for this user
+  const fetchUserVotes = useCallback(async (currentUser) => {
+    if (!currentUser?.id) {
+      setUserVotes([]);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('votes')
         .select('app_id')
-        .eq('user_id', user.id);
+        .eq('user_id', currentUser.id);
 
       if (error) throw error;
       setUserVotes(data?.map(vote => vote.app_id) || []);
     } catch (error) {
       console.error('Error fetching user votes:', error.message);
+      setUserVotes([]);
     }
-  }, [user]);
+  }, []);
 
-  const fetchUserProfile = useCallback(async () => {
-    if (!user?.id) return;
-
+  // Fetch user profile is not needed for rendering, but preserved for side-effects
+  const fetchUserProfile = useCallback(async (currentUser) => {
+    if (!currentUser?.id) return;
     try {
       const { error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', currentUser.id)
         .single();
-
       if (error) throw error;
-      // Profile data not used in component
     } catch (error) {
       console.error('Error fetching user profile:', error.message);
     }
-  }, [user]);
+  }, []);
 
+  // Fetch all apps
   const fetchApps = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -69,11 +74,25 @@ const Home = () => {
     }
   }, []);
 
+  // This useEffect ensures that on cold load/refresh, we fetch data as soon as user is known
   useEffect(() => {
-    fetchApps();
-    fetchUserVotes();
-    fetchUserProfile();
-  }, [fetchApps, fetchUserVotes, fetchUserProfile]);
+    // Only fetch after authentication loading is finished
+    if (!authLoading) {
+      if (user) {
+        setLoading(true);
+        fetchApps();
+        fetchUserVotes(user);
+        fetchUserProfile(user); // does nothing but logs
+      } else {
+        // If not logged in, clear state and don't fetch
+        setApps([]);
+        setUserVotes([]);
+        setLoading(false);
+      }
+    }
+    // Only run if authLoading or user changes
+  }, [authLoading, user, fetchApps, fetchUserVotes, fetchUserProfile]);
+
 
   const handleVote = async (appId) => {
     if (!user) {
@@ -94,11 +113,12 @@ const Home = () => {
         if (error) throw error;
 
         // Update local state
-        setUserVotes(userVotes.filter(id => id !== appId));
+        setUserVotes(prev => prev.filter(id => id !== appId));
         toast.success('Vote removed');
         
-        // Update the app list to reflect vote changes
+        // Update the app list and user votes to reflect vote changes
         fetchApps();
+        fetchUserVotes(user);
       } catch (error) {
         console.error('Error removing vote:', error.message);
         toast.error('Failed to remove vote');
@@ -119,11 +139,12 @@ const Home = () => {
         if (error) throw error;
 
         // Update local state
-        setUserVotes([...userVotes, appId]);
+        setUserVotes(prev => [...prev, appId]);
         toast.success('Vote added');
         
-        // Update the app list to reflect vote changes
+        // Update the app list and user votes to reflect vote changes
         fetchApps();
+        fetchUserVotes(user);
       } catch (error) {
         console.error('Error adding vote:', error.message);
         toast.error('Failed to add vote');
