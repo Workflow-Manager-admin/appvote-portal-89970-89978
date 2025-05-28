@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { ContestContext } from '../contexts/ContestContext';
+import ContestContext from '../contexts/ContestContext';
 import Layout from '../components/Layout';
 
 const Home = () => {
