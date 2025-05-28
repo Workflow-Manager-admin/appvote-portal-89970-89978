@@ -15,7 +15,7 @@ import { useEffect, useRef } from 'react';
  * Component responsible for redirecting the user after first-time login, once all contexts are ready.
  */
 function RouterRedirector() {
-  const { user, loading } = useAuth();
+  const { user, loading, isReady: authReady } = useAuth();
   const { isReady: contestReady, currentWeek } = useContest();
   const navigate = useNavigate();
 
@@ -24,7 +24,8 @@ function RouterRedirector() {
 
   useEffect(() => {
     // Only proceed if both contexts are ready and user is present
-    if (!user || loading || !contestReady) return;
+    if (!authReady || !contestReady) return;
+    if (!user || loading) return;
     if (hasRedirected.current) return;
     if (!wasLoggedIn.current && user) {
       if (currentWeek && currentWeek.id) {
@@ -36,7 +37,7 @@ function RouterRedirector() {
       }
     }
     wasLoggedIn.current = !!user;
-  }, [user, loading, contestReady, currentWeek, navigate]);
+  }, [user, loading, authReady, contestReady, currentWeek, navigate]);
 
   return null; // This component does not render anything
 }
