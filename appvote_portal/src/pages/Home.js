@@ -1,3 +1,13 @@
+/*
+  Home.js: App showcase page
+  Enhancements by KaviaAgent:
+  - Ensures apps are always filtered for a valid contest_week_id (selectedWeekId).
+  - Persists contest_week_id to localStorage and supports reading from ?week=ID URL param for shareability.
+  - On page reload or revisit, restores the last used (valid) week, always filtering apps and user votes by that week after refresh.
+  - Optionally, you can enable deep-linking and shareable filtered views by uncommenting URL param code.
+
+  To fully persist state and ensure correct week is used on every app/vote fetch, do not remove these guards!
+*/
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,20 +29,64 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedWeekId, setSelectedWeekId] = useState(null);
 
-  // Set initial selected week when context loads
+  // Utility to get contest_week_id from URL (if provided)
+  function getContestWeekIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const weekParam = params.get('week');
+    return weekParam ? Number(weekParam) : null;
+  }
+
+  // Robust initial week selection on mount (persisted/localStorage or URL)
   useEffect(() => {
-    if (currentWeek) {
-      // Always default to selecting the active week when a user is logged in
-      const activeWeek = getActiveWeek();
-      if (user && activeWeek) {
-        // If there's an active week, always prefer that one
-        setSelectedWeekId(activeWeek.id);
-      } else {
-        // Otherwise, use the current week from context
-        setSelectedWeekId(currentWeek.id);
+    if (!currentWeek) return;
+
+    // 1. Try to load from URL (?week=...), prefer if present & valid
+    const urlWeekId = getContestWeekIdFromUrl();
+    const allWeeks = getAllWeeks();
+    let prefersWeekId = null;
+
+    if (
+      urlWeekId &&
+      allWeeks.length &&
+      allWeeks.some((w) => w.id === urlWeekId)
+    ) {
+      prefersWeekId = urlWeekId;
+    } else {
+      // 2. Try to load from localStorage
+      const lsIdRaw = window.localStorage.getItem('contest_week_id');
+      const lsId = lsIdRaw ? Number(lsIdRaw) : null;
+      if (
+        lsId &&
+        allWeeks.length &&
+        allWeeks.some((w) => w.id === lsId)
+      ) {
+        prefersWeekId = lsId;
       }
     }
-  }, [currentWeek, user, getActiveWeek]);
+
+    // 3. Fallback: use current context logic (active week preferred)
+    if (!prefersWeekId) {
+      const activeWeek = getActiveWeek();
+      if (user && activeWeek) {
+        prefersWeekId = activeWeek.id;
+      } else {
+        prefersWeekId = currentWeek.id;
+      }
+    }
+
+    // Only update once!
+    setSelectedWeekId(prefersWeekId);
+    // Always persist user's choice to localStorage for future refreshes
+    window.localStorage.setItem('contest_week_id', prefersWeekId);
+
+    // Optionally, could set URL (?week=ID) for shareable state
+    //const params = new URLSearchParams(window.location.search);
+    //params.set('week', prefersWeekId);
+    //window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+
+    // eslint-disable-next-line
+  }, [currentWeek, user, getActiveWeek, getAllWeeks]);
+
 
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
@@ -299,11 +353,18 @@ const Home = () => {
     );
   }
 
-  // Handle changing the selected week
+  // Handle changing the selected week, and also persist to localStorage (and optionally URL param)
   const handleWeekChange = (weekId) => {
-    setSelectedWeekId(Number(weekId));
-    switchWeek(Number(weekId));
+    const numId = Number(weekId);
+    setSelectedWeekId(numId);
+    switchWeek(numId);
     setLoading(true);
+    // Persist the user's choice
+    window.localStorage.setItem('contest_week_id', numId);
+    // Optionally, update URL param for direct navigation/sharing (uncomment if desired)
+    // const params = new URLSearchParams(window.location.search);
+    // params.set('week', numId);
+    // window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
   };
 
   // Get all available contest weeks
