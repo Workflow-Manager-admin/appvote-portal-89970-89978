@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from './AuthContext';
 import supabase from '../config/supabaseClient';
@@ -33,7 +33,10 @@ export function ContestProvider({ children }) {
   const [isReady, setIsReady] = useState(false);               // transitions to true on first successful fetch or realtime
   const [error, setError] = useState(null);
 
-  const { isAdmin } = useAuth();
+  // Use AuthContext to check readiness. AuthContext loading === false == isReady.
+  const { isAdmin, loading: authLoading } = useAuth();
+  const authIsReady = !authLoading;
+  const hasInitializedRef = useRef(false);
 
   // This tracks if we have received valid contest weeks at least once (via fetch or realtime)
   const [fetchedOnce, setFetchedOnce] = useState(false);
