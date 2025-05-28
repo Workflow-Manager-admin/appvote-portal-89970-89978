@@ -138,6 +138,9 @@ export function ContestProvider({ children }) {
 
   // Effect: Parallel bootstrap (initial fetch + live subscriptions)
   useEffect(() => {
+    // Only initialize after AuthContext is ready; also guard so we initialize exactly once until auth becomes not ready then ready again (for hard reload).
+    if (!authIsReady || hasInitializedRef.current) return;
+
     let unmounted = false;
     setIsInitializing(true);
     setIsLoading(true);
@@ -180,15 +183,18 @@ export function ContestProvider({ children }) {
     // Save refs for cleanup if needed (not commonly used, but for robust pattern)
     subscriptions = { contest: contestSubscription, winners: winnersSubscription };
 
+    hasInitializedRef.current = true; // prevent retrigger unless auth goes unready then ready again.
+
     // If unmounted, cleanup subscriptions robustly
     return () => {
       if (subscriptions.contest && subscriptions.contest.unsubscribe) subscriptions.contest.unsubscribe();
       if (subscriptions.winners && subscriptions.winners.unsubscribe) subscriptions.winners.unsubscribe();
       unmounted = true;
+      hasInitializedRef.current = false; // allow re-init if unmounted/remounted and auth is ready again
     };
-    // We do NOT want isReady, error, etc as deps here since we want effect to run strictly once on mount
+    // AuthContext readiness is our trigger. All others do not create extra reloads.
     // eslint-disable-next-line
-  }, []);
+  }, [authIsReady]);
 
   // Switch to a different contest week (for admin or display)
   const switchWeek = (weekId) => {
@@ -377,19 +383,21 @@ export function ContestProvider({ children }) {
 
   // Updated: context-wide status and contract
   // include new flags and expose error, maintain old API contract for all features
+  // Only expose isReady=true if BOTH auth is ready and contest data is ready (not before)
+  const contextIsReady = authIsReady && isReady;
   const hasValidContestStructure =
     contestWeeks &&
     contestWeeks.length > 0 &&
     !isLoading &&
     !isInitializing &&
-    isReady &&
+    contextIsReady &&
     !error;
 
   const value = {
     // --- status/extras for robust consumption and UI ---
     isInitializing,
     isLoading,
-    isReady,
+    isReady: contextIsReady,
     error,
 
     // --- previous contract (legacy) ---
