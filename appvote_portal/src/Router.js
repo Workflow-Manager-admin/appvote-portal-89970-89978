@@ -12,42 +12,41 @@ import DebugPage from './pages/DebugPage';
 import { useEffect, useRef } from 'react';
 
 /**
- * Main app router.
- * Handles protected routing and implements post-login contest page redirect logic.
+ * Component responsible for redirecting the user after first-time login, once all contexts are ready.
  */
-const Router = () => {
-  const { user, loading, isAdmin, userRole } = useAuth();
+function RouterRedirector() {
+  const { user, loading } = useAuth();
   const { isReady: contestReady, currentWeek } = useContest();
-  const navigate = useNavigate ? useNavigate() : null; // In component scope, will be re-used
+  const navigate = useNavigate();
 
-  // Track whether the user session was just established via login (not reload)
-  const wasLoggedIn = useRef(!!user); // Save initial state on first mount
+  const wasLoggedIn = useRef(!!user);
   const hasRedirected = useRef(false);
 
-  // Detect true post-login (not reload) and redirect once Auth and Contest context are ready
   useEffect(() => {
     // Only proceed if both contexts are ready and user is present
     if (!user || loading || !contestReady) return;
-    // If already redirected this login, do nothing
     if (hasRedirected.current) return;
-
-    // Only trigger when 'wasLoggedIn' is false and 'user' is now truthy and not reloading
     if (!wasLoggedIn.current && user) {
-      // If there is an active contest week, redirect to its page;
-      // Assume contest route is `/contest/${currentWeek.id}` (adjust as needed)
       if (currentWeek && currentWeek.id) {
         navigate(`/contest/${currentWeek.id}`, { replace: true });
         hasRedirected.current = true;
       } else {
-        // No active contest week, route to home
         navigate('/', { replace: true });
         hasRedirected.current = true;
       }
     }
-    // Update login tracker for next run
-    if (user) wasLoggedIn.current = true;
-    else wasLoggedIn.current = false;
+    wasLoggedIn.current = !!user;
   }, [user, loading, contestReady, currentWeek, navigate]);
+
+  return null; // This component does not render anything
+}
+
+/**
+ * Main app router.
+ * Handles protected routing and implements post-login contest page redirect logic via RouterRedirector.
+ */
+const Router = () => {
+  const { user, loading, isAdmin, userRole } = useAuth();
 
   // Protected route component - only shows loading state on initial auth check, not during navigation
   const ProtectedRoute = ({ children }) => {
@@ -84,6 +83,7 @@ const Router = () => {
 
   return (
     <BrowserRouter>
+      <RouterRedirector />
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
