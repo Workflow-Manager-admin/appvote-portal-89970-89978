@@ -42,3 +42,27 @@ ERROR in ./src/pages/Home.js 18:17-31
 export 'default' (imported as 'ContestContext') was not found in '../contexts/ContestContext' (possible exports: ContestProvider, useContest)
 
 webpack compiled with 1 error
+Compiling...
+Failed to compile.
+
+Attempted import error: '../contexts/ContestContext' does not contain a default export (imported as 'ContestContext').
+ERROR in ./src/pages/Home.js 18:17-31
+export 'default' (imported as 'ContestContext') was not found in '../contexts/ContestContext' (possible exports: ContestProvider, useContest)
+
+webpack compiled with 1 error
+Compiling...
+Failed to compile.
+
+Attempted import error: '../contexts/ContestContext' does not contain a default export (imported as 'ContestContext').
+ERROR in ./src/pages/Home.js 18:17-31
+export 'default' (imported as 'ContestContext') was not found in '../contexts/ContestContext' (possible exports: ContestProvider, useContest)
+
+webpack compiled with 1 error
+Compiling...
+Failed to compile.
+
+Attempted import error: '../contexts/ContestContext' does not contain a default export (imported as 'ContestContext').
+ERROR in ./src/pages/Home.js 18:17-31
+export 'default' (imported as 'ContestContext') was not found in '../contexts/ContestContext' (possible exports: ContestContext, ContestProvider, useContest)
+
+webpack compiled with 1 error

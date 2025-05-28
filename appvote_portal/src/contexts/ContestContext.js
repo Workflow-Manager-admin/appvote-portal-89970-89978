@@ -7,7 +7,7 @@ import supabase from '../config/supabaseClient';
  * Context for managing contest weeks, active contest, and winners
  * Provides data and functions related to the contest state throughout the app
  */
-const ContestContext = createContext();
+export const ContestContext = createContext();
 
 // PUBLIC_INTERFACE
 export function useContest() {
