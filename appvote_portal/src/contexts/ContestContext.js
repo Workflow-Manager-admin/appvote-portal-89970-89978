@@ -17,80 +17,83 @@ export function useContest() {
 // PUBLIC_INTERFACE
 export function ContestProvider({ children }) {
   /**
-   * Provider component that makes contest data available to all child components
+   * Robust Provider for contest state.
+   * - Performs initial fetch and live subscriptions in parallel.
+   * - Exposes: isInitializing, isLoading, isReady, error, and all feature APIs.
+   * - Ensures isReady triggers when either fetch or subscription delivers data.
    */
+
   const [contestWeeks, setContestWeeks] = useState([]);
   const [currentWeek, setCurrentWeek] = useState(null);
   const [winners, setWinners] = useState({});
-  const [loading, setLoading] = useState(true);
+
+  // Robust state flags and error
+  const [isInitializing, setIsInitializing] = useState(true);  // true until first data received from either source
+  const [isLoading, setIsLoading] = useState(true);            // true while fetch is happening
+  const [isReady, setIsReady] = useState(false);               // transitions to true on first successful fetch or realtime
+  const [error, setError] = useState(null);
+
   const { isAdmin } = useAuth();
 
-  // Fetch contest weeks data
-  useEffect(() => {
-    const fetchContestWeeks = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('contest_weeks')
-          .select('*')
-          .order('id', { ascending: true });
+  // This tracks if we have received valid contest weeks at least once (via fetch or realtime)
+  const [fetchedOnce, setFetchedOnce] = useState(false);
+  const [subscribedOnce, setSubscribedOnce] = useState(false);
 
-        if (error) throw error;
-        setContestWeeks(data || []);
+  // Internal ref to allow out-of-effect function access for retrying
+  let subscriptions = { contest: null, winners: null };
 
-        // Find current active week if any
-        const activeWeek = data?.find(week => week.status === 'active');
-        if (activeWeek) {
-          setCurrentWeek(activeWeek);
-        } else {
-          // If no active week, we'll use the first upcoming week
-          // or the most recently ended week
-          const upcomingWeek = data?.find(week => week.status === 'upcoming');
-          const endedWeeks = data?.filter(week => week.status === 'ended' || week.status === 'completed');
-          const mostRecentEndedWeek = endedWeeks?.length 
-            ? endedWeeks.sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0]
+  // Robust fetch for contest weeks
+  const fetchContestWeeks = async (isRetry = false) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('contest_weeks')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) throw error;
+      setContestWeeks(data || []);
+
+      // Find current active week if any
+      const activeWeek = data?.find(week => week.status === 'active');
+      if (activeWeek) {
+        setCurrentWeek(activeWeek);
+      } else {
+        // Use first upcoming or most recently ended or first available
+        const upcomingWeek = data?.find(week => week.status === 'upcoming');
+        const endedWeeks = data?.filter(
+          week => week.status === 'ended' || week.status === 'completed'
+        );
+        const mostRecentEndedWeek =
+          endedWeeks?.length
+            ? endedWeeks.sort(
+                (a, b) => new Date(b.end_date) - new Date(a.end_date)
+              )[0]
             : null;
 
-          setCurrentWeek(upcomingWeek || mostRecentEndedWeek || (data?.length ? data[0] : null));
-        }
-      } catch (error) {
-        console.error('Error fetching contest weeks:', error.message);
-        toast.error('Failed to load contest data');
-      } finally {
-        setLoading(false);
+        setCurrentWeek(
+          upcomingWeek || mostRecentEndedWeek || (data?.length ? data[0] : null)
+        );
       }
-    };
 
-    fetchContestWeeks();
-    fetchWinners();
+      setFetchedOnce(true);
+      setIsLoading(false);
+      if (!isReady) setIsReady(true); // Set isReady on first data (fetch or live)
+      if (isInitializing) setIsInitializing(false);
+      setError(null);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Failed to load contest data');
+      if (!fetchedOnce && !subscribedOnce) setIsInitializing(false);
+      // Optionally auto-retry after delay if considered transient error
+      if (!isRetry) setTimeout(() => fetchContestWeeks(true), 4000);
+    }
+  };
 
-    // Subscribe to changes in contest_weeks table
-    const contestSubscription = supabase
-      .channel('custom-contest-channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'contest_weeks' }, 
-        () => {
-          fetchContestWeeks();
-      })
-      .subscribe();
-
-    // Subscribe to changes in contest_winners table
-    const winnersSubscription = supabase
-      .channel('custom-winners-channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'contest_winners' }, 
-        () => {
-          fetchWinners();
-      })
-      .subscribe();
-
-    return () => {
-      contestSubscription.unsubscribe();
-      winnersSubscription.unsubscribe();
-    };
-  }, []);
-
-  // Fetch contest winners for all weeks
-  const fetchWinners = async () => {
+  // Robust fetch for contest winners
+  const fetchWinners = async (isRetry = false) => {
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('contest_winners')
@@ -114,7 +117,7 @@ export function ContestProvider({ children }) {
 
       // Organize winners by contest week
       const winnersByWeek = {};
-      data?.forEach(winner => {
+      data?.forEach((winner) => {
         if (!winnersByWeek[winner.contest_week_id]) {
           winnersByWeek[winner.contest_week_id] = [];
         }
@@ -122,10 +125,67 @@ export function ContestProvider({ children }) {
       });
 
       setWinners(winnersByWeek);
-    } catch (error) {
-      console.error('Error fetching winners:', error.message);
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Failed to load contest winners');
+      // Optionally auto-retry after delay if considered transient error
+      if (!isRetry) setTimeout(() => fetchWinners(true), 4000);
     }
   };
+
+  // Effect: Parallel bootstrap (initial fetch + live subscriptions)
+  useEffect(() => {
+    let unmounted = false;
+    setIsInitializing(true);
+    setIsLoading(true);
+    setFetchedOnce(false);
+    setSubscribedOnce(false);
+
+    // Start parallel initial fetch
+    fetchContestWeeks();
+    fetchWinners();
+
+    // Setup live subscriptions in parallel to fetch:
+    // contest_weeks
+    const contestSubscription = supabase
+      .channel('custom-contest-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contest_weeks' },
+        (payload) => {
+          // On *any* event, force a re-fetch of weeks
+          fetchContestWeeks();
+          if (!subscribedOnce) setSubscribedOnce(true);
+          if (!isReady) setIsReady(true);
+          if (isInitializing) setIsInitializing(false);
+        }
+      )
+      .subscribe();
+
+    // contest_winners
+    const winnersSubscription = supabase
+      .channel('custom-winners-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contest_winners' },
+        (payload) => {
+          fetchWinners();
+        }
+      )
+      .subscribe();
+
+    // Save refs for cleanup if needed (not commonly used, but for robust pattern)
+    subscriptions = { contest: contestSubscription, winners: winnersSubscription };
+
+    // If unmounted, cleanup subscriptions robustly
+    return () => {
+      if (subscriptions.contest && subscriptions.contest.unsubscribe) subscriptions.contest.unsubscribe();
+      if (subscriptions.winners && subscriptions.winners.unsubscribe) subscriptions.winners.unsubscribe();
+      unmounted = true;
+    };
+    // We do NOT want isReady, error, etc as deps here since we want effect to run strictly once on mount
+    // eslint-disable-next-line
+  }, []);
 
   // Switch to a different contest week (for admin or display)
   const switchWeek = (weekId) => {
