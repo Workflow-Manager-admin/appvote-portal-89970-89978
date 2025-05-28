@@ -357,8 +357,15 @@ const Home = () => {
   }
 
   // Handle changing the selected week, and also persist to localStorage (and optionally URL param)
+  // PUBLIC_INTERFACE
   const handleWeekChange = (weekId) => {
     const numId = Number(weekId);
+
+    // If the selected week is already active, do nothing
+    if (selectedWeekId === numId) {
+      return;
+    }
+
     setSelectedWeekId(numId);
     switchWeek(numId);
     setLoading(true);
