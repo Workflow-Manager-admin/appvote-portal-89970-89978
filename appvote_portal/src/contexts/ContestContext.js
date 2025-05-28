@@ -141,7 +141,8 @@ export function ContestProvider({ children }) {
 
   // Effect: Parallel bootstrap (initial fetch + live subscriptions)
   useEffect(() => {
-    // Only initialize after AuthContext is ready; also guard so we initialize exactly once until auth becomes not ready then ready again (for hard reload).
+    // Only initialize contest network logic after AuthContext is fully hydrated
+    // (assumes isReady as preferred, but falls back to loading === false)
     if (!authIsReady || hasInitializedRef.current) return;
 
     let unmounted = false;
@@ -387,7 +388,14 @@ export function ContestProvider({ children }) {
   // Updated: context-wide status and contract
   // include new flags and expose error, maintain old API contract for all features
   // Only expose isReady=true if BOTH auth is ready and contest data is ready (not before)
-  const contextIsReady = authIsReady && isReady;
+
+  /**
+   * Only set context isReady true if:
+   * - AuthContext is ready (hydrated)
+   * - AND contest data is also loaded at least once
+   */
+  const contextIsReady = !!authIsReady && isReady;
+
   const hasValidContestStructure =
     contestWeeks &&
     contestWeeks.length > 0 &&
@@ -400,6 +408,7 @@ export function ContestProvider({ children }) {
     // --- status/extras for robust consumption and UI ---
     isInitializing,
     isLoading,
+    // PUBLIC_INTERFACE: Only true if AuthContext is completely loaded AND contest has loaded at least once
     isReady: contextIsReady,
     error,
 
