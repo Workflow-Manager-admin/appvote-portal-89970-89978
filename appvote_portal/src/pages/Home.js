@@ -4,35 +4,37 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContest } from '../contexts/ContestContext';
 import supabase, { getImageUrl } from '../config/supabaseClient';
 
+// PUBLIC_INTERFACE
 const Home = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isReady: authReady, isAdmin } = useAuth();
   const { 
     currentWeek, 
     canVote, 
     getAllWeeks, 
     switchWeek, 
     hasValidContestStructure,
-    getActiveWeek 
+    getActiveWeek,
+    isReady: contestReady
   } = useContest();
+
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedWeekId, setSelectedWeekId] = useState(null);
 
-  // Set initial selected week when context loads
+  // Only set week when both contexts are ready  
   useEffect(() => {
+    if (!(authReady && contestReady)) return;
     if (currentWeek) {
       // Always default to selecting the active week when a user is logged in
       const activeWeek = getActiveWeek();
       if (user && activeWeek) {
-        // If there's an active week, always prefer that one
         setSelectedWeekId(activeWeek.id);
       } else {
-        // Otherwise, use the current week from context
         setSelectedWeekId(currentWeek.id);
       }
     }
-  }, [currentWeek, user, getActiveWeek]);
+  }, [authReady, contestReady, currentWeek, user, getActiveWeek]);
 
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
@@ -163,6 +165,8 @@ const Home = () => {
   }, [selectedWeekId, hasValidContestStructure, user, getActiveWeek]);
 
   useEffect(() => {
+    // Wait for both contexts to be ready before triggering contest/app logic
+    if (!authReady || !contestReady) return;
     // If contest structure is valid, wait for selectedWeekId
     // If not valid, load data anyway without week dependency
     if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
@@ -171,7 +175,7 @@ const Home = () => {
       fetchUserVotes();
       fetchUserProfile();
     }
-  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user]);
+  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user, authReady, contestReady]);
 
   const handleVote = async (appId) => {
     if (!user) {
