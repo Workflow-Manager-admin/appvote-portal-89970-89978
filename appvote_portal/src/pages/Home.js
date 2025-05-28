@@ -217,13 +217,16 @@ const Home = () => {
   }, [selectedWeekId, hasValidContestStructure, user, getActiveWeek]);
 
   useEffect(() => {
-    // If contest structure is valid, wait for selectedWeekId
-    // If not valid, load data anyway without week dependency
-    if ((hasValidContestStructure && selectedWeekId) || !hasValidContestStructure) {
+    // Only fetch apps/userVotes/profile if selectedWeekId is non-null (ready) for valid structure,
+    // or always if structure is invalid (legacy/fallback).
+    if ((hasValidContestStructure && selectedWeekId != null) || !hasValidContestStructure) {
       setLoading(true);
-      fetchApps();
-      fetchUserVotes();
-      fetchUserProfile();
+      // Only fetch if selectedWeekId is set: ensures API call is filtered
+      if (!hasValidContestStructure || selectedWeekId != null) {
+        fetchApps();
+        fetchUserVotes();
+        fetchUserProfile();
+      }
     }
   }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user]);
 
