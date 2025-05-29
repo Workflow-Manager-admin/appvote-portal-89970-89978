@@ -158,6 +158,9 @@ const Home = () => {
   }, [user]);
 
   const fetchApps = useCallback(async () => {
+    // Enforce: cannot fetch apps at all unless week is chosen (if schema demands)
+    if (hasValidContestStructure && !selectedWeekId) return;
+
     try {
       let query = supabase
         .from('apps')
@@ -172,20 +175,23 @@ const Home = () => {
           profiles:user_id (username, registration_number)
         `)
         .order('created_at', { ascending: false });
-      
-      // If we have a selected week and the contest structure is valid, filter by week
+
+      // Only filter by contest_week_id if we have a valid contest structure
       if (selectedWeekId && hasValidContestStructure) {
         console.log(`Fetching apps for week ID: ${selectedWeekId}`);
         query = query.eq('contest_week_id', selectedWeekId);
+      } else if (hasValidContestStructure && !selectedWeekId) {
+        // Defensive: block fetch entirely (should not run at all)
+        return;
       } else if (user && hasValidContestStructure) {
         // If user is logged in but no specific week is selected,
         // try to fetch apps for the active contest week
-        const activeWeek = getActiveWeek();
+        const activeWeek = getActiveWeek && getActiveWeek();
         if (activeWeek) {
           console.log(`User logged in - defaulting to active week ID: ${activeWeek.id}`);
           query = query.eq('contest_week_id', activeWeek.id);
         } else {
-          // If no active week exists, fetch all apps
+          // If no active week exists, fetch all apps (legacy only)
           console.log('No active week found - fetching all apps');
         }
       } else {
@@ -204,11 +210,11 @@ const Home = () => {
             .from('apps')
             .select(`id, name, link, image_url, created_at, user_id, profiles:user_id (username, registration_number)`)
             .order('created_at', { ascending: false });
-            
+
           if (fallbackError) {
             throw fallbackError;
           }
-          
+
           setApps(fallbackData || []);
         } else {
           throw error;
