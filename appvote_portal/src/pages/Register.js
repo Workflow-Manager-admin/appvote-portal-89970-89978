@@ -9,18 +9,19 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
+  const [showVerifyNotice, setShowVerifyNotice] = useState(false);
 
   const onSubmit = async (data) => {
     setLoading(true);
-    
+
     try {
       const { email, password, username, registrationNumber } = data;
       const { error } = await registerUser(email, password, username, registrationNumber);
-      
+
       if (error) {
         toast.error(error.message || 'Failed to create account');
       } else {
-        // Instead of auto-signing in and navigating, alert user to verify email clearly
+        // Instead of auto-login or redirect, prompt for email verification
         toast.success('Registration successful! Please check your email and verify your account before logging in.');
         setShowVerifyNotice(true);
       }
@@ -41,7 +42,22 @@ const Register = () => {
           </Link>
           <h2 className="auth-title">Create Account</h2>
         </div>
-        
+
+        {showVerifyNotice && (
+          <div className="verify-notice" style={{
+            background: '#fef7da',
+            border: '1px solid #f1c40f',
+            color: '#7a6002',
+            padding: '16px',
+            borderRadius: '6px',
+            marginBottom: '18px',
+            textAlign: 'center'
+          }}>
+            Registration successful!<br />
+            Please check your email and click the verification link before logging in.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
           <fieldset disabled={showVerifyNotice || loading} style={{border: 0, padding: 0, margin: 0}}>
             <div className="form-group">
