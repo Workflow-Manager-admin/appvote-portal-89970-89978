@@ -96,18 +96,21 @@ const Home = () => {
   // Define the fetch functions with useCallback to avoid recreation on each render
   const fetchUserVotes = useCallback(async () => {
     if (!user?.id) return;
+    // Enforce: cannot fetch votes at all unless week is chosen (if schema demands)
+    if (hasValidContestStructure && !selectedWeekId) return;
 
     try {
       let query = supabase
         .from('votes')
         .select('app_id')
         .eq('user_id', user.id);
-        
+
       // Only filter by contest_week_id if we have a valid contest structure
       if (selectedWeekId && hasValidContestStructure) {
         query = query.eq('contest_week_id', selectedWeekId);
-      } else {
-        console.log('Fetching all votes for user without week filter');
+      } else if (hasValidContestStructure && !selectedWeekId) {
+        // Defensive: block fetch entirely (can't query by week, per requirements should not run at all)
+        return;
       }
 
       const { data, error } = await query;
@@ -120,11 +123,11 @@ const Home = () => {
             .from('votes')
             .select('app_id')
             .eq('user_id', user.id);
-            
+
           if (fallbackError) {
             throw fallbackError;
           }
-          
+
           setUserVotes(fallbackData?.map(vote => vote.app_id) || []);
         } else {
           throw error;
