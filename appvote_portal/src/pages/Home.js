@@ -27,7 +27,6 @@ const Home = () => {
   const [apps, setApps] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWeekId, setSelectedWeekId] = useState(null);
 
   // Utility to get contest_week_id from URL (if provided)
   function getContestWeekIdFromUrl() {
@@ -36,56 +35,62 @@ const Home = () => {
     return weekParam ? Number(weekParam) : null;
   }
 
-  // Robust initial week selection on mount (persisted/localStorage or URL)
-  useEffect(() => {
-    if (!currentWeek) return;
-
-    // 1. Try to load from URL (?week=...), prefer if present & valid
+  // Synchronously obtain the initial weekId (URL -> localStorage -> activeWeek/currentWeek -> fallback '1')
+  function syncInitialWeekId() {
     const urlWeekId = getContestWeekIdFromUrl();
     const allWeeks = getAllWeeks();
-    let prefersWeekId = null;
-
     if (
       urlWeekId &&
       allWeeks.length &&
       allWeeks.some((w) => w.id === urlWeekId)
     ) {
-      prefersWeekId = urlWeekId;
-    } else {
-      // 2. Try to load from localStorage
-      const lsIdRaw = window.localStorage.getItem('contest_week_id');
-      const lsId = lsIdRaw ? Number(lsIdRaw) : null;
-      if (
-        lsId &&
-        allWeeks.length &&
-        allWeeks.some((w) => w.id === lsId)
-      ) {
-        prefersWeekId = lsId;
-      }
+      return urlWeekId;
     }
-
-    // 3. Fallback: use current context logic (active week preferred)
-    if (!prefersWeekId) {
-      const activeWeek = getActiveWeek();
-      if (user && activeWeek) {
-        prefersWeekId = activeWeek.id;
-      } else {
-        prefersWeekId = currentWeek.id;
-      }
+    const lsIdRaw = window.localStorage.getItem('contest_week_id');
+    const lsId = lsIdRaw ? Number(lsIdRaw) : null;
+    if (
+      lsId &&
+      allWeeks.length &&
+      allWeeks.some((w) => w.id === lsId)
+    ) {
+      return lsId;
     }
+    const activeWeek = getActiveWeek && getActiveWeek();
+    if (activeWeek && activeWeek.id) {
+      return activeWeek.id;
+    }
+    if (currentWeek && currentWeek.id) {
+      return currentWeek.id;
+    }
+    // Fallback: week 1 as per prompt
+    return 1;
+  }
 
-    // Only update once!
-    setSelectedWeekId(prefersWeekId);
-    // Always persist user's choice to localStorage for future refreshes
-    window.localStorage.setItem('contest_week_id', prefersWeekId);
+  // PUBLIC_INTERFACE
+  // Always initialize selectedWeekId synchronously!
+  const [selectedWeekId, setSelectedWeekId] = useState(() => syncInitialWeekId());
 
-    // Optionally, could set URL (?week=ID) for shareable state
-    //const params = new URLSearchParams(window.location.search);
-    //params.set('week', prefersWeekId);
-    //window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
-
+  // Watch for context/user changes and re-sync selectedWeekId only if the set of available weeks changes such that our current one is invalid.
+  useEffect(() => {
+    const allWeeks = getAllWeeks();
+    let validWeekId = selectedWeekId;
+    // If current selectedWeekId is no longer valid (e.g., after week list loads/changing user), reset it.
+    if (
+      !allWeeks.length ||
+      !allWeeks.some((w) => w.id === selectedWeekId)
+    ) {
+      validWeekId = syncInitialWeekId();
+      setSelectedWeekId(validWeekId);
+      window.localStorage.setItem('contest_week_id', validWeekId);
+      // Optionally update URL as above
+      // const params = new URLSearchParams(window.location.search);
+      // params.set('week', validWeekId);
+      // window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+    }
+    // Always persist in localStorage (also future-proof: if week doesn't change, this does nothing)
+    window.localStorage.setItem('contest_week_id', validWeekId);
     // eslint-disable-next-line
-  }, [currentWeek, user, getActiveWeek, getAllWeeks]);
+  }, [currentWeek, user, getAllWeeks, getActiveWeek]);
 
 
   // Define the fetch functions with useCallback to avoid recreation on each render
