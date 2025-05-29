@@ -369,6 +369,42 @@ const Home = () => {
     return user?.id === appUserId;
   };
 
+  /**
+   * PUBLIC_INTERFACE
+   * Delete an app from Supabase and update the UI state, with error handling and permission check.
+   */
+  const handleDeleteApp = async (app) => {
+    // Defensive: confirm intent
+    const reallyDelete = window.confirm(
+      "Are you sure you want to delete this app?\nThis action cannot be undone."
+    );
+    if (!reallyDelete) return;
+
+    try {
+      // Defensive: verify user and ownership again
+      if (!user?.id || user.id !== app.user_id) {
+        toast.error("You do not have permission to delete this app.");
+        return;
+      }
+      // Call Supabase to delete app by id and owner
+      const { error } = await supabase
+        .from("apps")
+        .delete()
+        .eq("id", app.id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        throw error;
+      }
+      // Remove from local UI state
+      setApps((prevApps) => prevApps.filter((a) => a.id !== app.id));
+      toast.success("App deleted!");
+    } catch (error) {
+      toast.error(error?.message || "Failed to delete app. Please try again.");
+      console.error("Delete app error:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container">
@@ -535,37 +571,7 @@ const Home = () => {
                       cursor: "pointer",
                       float: "right",
                     }}
-                    onClick={async () => {
-                      const reallyDelete = window.confirm(
-                        "Are you sure you want to delete this app?\nThis action cannot be undone."
-                      );
-                      if (!reallyDelete) return;
-
-                      try {
-                        // Double-check user is still present & owns the app here
-                        if (user?.id !== app.user_id) {
-                          toast.error("You do not have permission to delete this app.");
-                          return;
-                        }
-                        // Supabase delete: Delete app from db where id and user_id match
-                        const { error } = await supabase
-                          .from('apps')
-                          .delete()
-                          .eq('id', app.id)
-                          .eq('user_id', user.id);
-
-                        if (error) {
-                          throw error;
-                        }
-                        // Remove from local state
-                        setApps(prevApps => prevApps.filter(a => a.id !== app.id));
-                        toast.success("App deleted!");
-                      } catch (error) {
-                        // Defensive fallback for toast error format
-                        toast.error(error?.message || "Failed to delete app. Please try again.");
-                        console.error("Delete app error:", error);
-                      }
-                    }}
+                    onClick={() => handleDeleteApp(app)}
                   >
                     🗑️ Delete
                   </button>
