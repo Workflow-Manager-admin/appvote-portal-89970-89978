@@ -239,6 +239,25 @@ body {
   margin-right: 1rem;
 }
 
+/* Delete button for user apps in Home.js */
+.delete-app-button {
+  background: #fff;
+  color: #c0392b;
+  border: 1px solid #c0392b;
+  border-radius: 6px;
+  margin: 4px 0 0 0;
+  padding: 5px 10px;
+  font-weight: bold;
+  cursor: pointer;
+  float: right;
+  transition: background 0.15s, color 0.15s;
+}
+.delete-app-button:hover,
+.delete-app-button:focus {
+  background: #c0392b;
+  color: #fff;
+}
+
 /* Forms */
 .form-group {
   margin-bottom: 1.5rem;
