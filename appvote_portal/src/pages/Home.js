@@ -222,17 +222,24 @@ const Home = () => {
   }, [selectedWeekId, hasValidContestStructure, user, getActiveWeek]);
 
   useEffect(() => {
-    // Only fetch apps/userVotes/profile if selectedWeekId is non-null (ready) for valid structure,
-    // or always if structure is invalid (legacy/fallback).
-    if ((hasValidContestStructure && selectedWeekId != null) || !hasValidContestStructure) {
-      setLoading(true);
-      // Only fetch if selectedWeekId is set: ensures API call is filtered
-      if (!hasValidContestStructure || selectedWeekId != null) {
+    // Completely prevent ANY fetch if selectedWeekId is not a valid/truthy value.
+    // This absolutely guarantees all API fetches are properly filtered.
+    if (
+      !hasValidContestStructure ||
+      (hasValidContestStructure && selectedWeekId)
+    ) {
+      // Only fetch when selectedWeekId is truthy or contest structure is invalid (for old schema support)
+      if (
+        (!hasValidContestStructure) ||
+        (hasValidContestStructure && selectedWeekId)
+      ) {
+        setLoading(true);
         fetchApps();
         fetchUserVotes();
         fetchUserProfile();
       }
     }
+    // Never run if selectedWeekId is falsy - no accidental fetches.
   }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user]);
 
   const handleVote = async (appId) => {
