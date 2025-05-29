@@ -518,6 +518,58 @@ const Home = () => {
                     {app.profiles?.registration_number && ` (${app.profiles.registration_number})`}
                   </p>
                 )}
+
+                {/* If this is the user's own app, show a Delete button */}
+                {isOwnApp(app.user_id) && (
+                  <button
+                    className="delete-app-button"
+                    title="Delete this app"
+                    style={{
+                      background: "#fff",
+                      color: "#c0392b",
+                      border: "1px solid #c0392b",
+                      borderRadius: "6px",
+                      margin: "4px 0 0 0",
+                      padding: "5px 10px",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      float: "right",
+                    }}
+                    onClick={async () => {
+                      const reallyDelete = window.confirm(
+                        "Are you sure you want to delete this app?\nThis action cannot be undone."
+                      );
+                      if (!reallyDelete) return;
+
+                      try {
+                        // Double-check user is still present & owns the app here
+                        if (user?.id !== app.user_id) {
+                          toast.error("You do not have permission to delete this app.");
+                          return;
+                        }
+                        // Supabase delete: Delete app from db where id and user_id match
+                        const { error } = await supabase
+                          .from('apps')
+                          .delete()
+                          .eq('id', app.id)
+                          .eq('user_id', user.id);
+
+                        if (error) {
+                          throw error;
+                        }
+                        // Remove from local state
+                        setApps(prevApps => prevApps.filter(a => a.id !== app.id));
+                        toast.success("App deleted!");
+                      } catch (error) {
+                        // Defensive fallback for toast error format
+                        toast.error(error?.message || "Failed to delete app. Please try again.");
+                        console.error("Delete app error:", error);
+                      }
+                    }}
+                  >
+                    🗑️ Delete
+                  </button>
+                )}
                 
                 <a 
                   href={app.link} 
