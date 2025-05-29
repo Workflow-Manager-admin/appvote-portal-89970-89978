@@ -66,7 +66,7 @@ const Home = () => {
 
   // Synchronously obtain the initial weekId
   function syncInitialWeekId() {
-    // Try to get week from URL, localStorage, or context, default always to 1 (string/number OK)
+    // Try to get week from URL, localStorage, or context; default always to 1
     const urlWeekId = getContestWeekIdFromUrl();
     const allWeeks = getAllWeeks();
     if (
@@ -92,17 +92,16 @@ const Home = () => {
     if (currentWeek && currentWeek.id) {
       return currentWeek.id;
     }
-    return 1; // ALWAYS return 1 as last resort fallback, string or number is fine
+    return 1; // default to 1 (string or number)
   }
 
-  // Always initialize selectedWeekId synchronously, guarantee never '', null, or undefined; always number or string '1'
+  // Always initialize selectedWeekId synchronously, never undefined/null/empty
   const [selectedWeekId, setSelectedWeekId] = useState(() => {
     const id = syncInitialWeekId();
-    // Ensure never undefined, null, or '', always '1' at worst
     return id || 1;
   });
 
-  // Watch for context/user changes and re-sync selectedWeekId only if week list changes.
+  // Watch for context/user/contest changes and re-sync selectedWeekId if needed
   useEffect(() => {
     const allWeeks = getAllWeeks();
     let validWeekId = selectedWeekId;
@@ -115,17 +114,16 @@ const Home = () => {
       window.localStorage.setItem('contest_week_id', validWeekId);
     }
     window.localStorage.setItem('contest_week_id', validWeekId);
-  // eslint-disable-next-line
+    // eslint-disable-next-line
   }, [currentWeek, user, getAllWeeks, getActiveWeek]);
 
   // Fetch functions
   const fetchUserVotes = useCallback(async () => {
     if (!user?.id) return;
-    // FORCE: always require selectedWeekId
     if (!selectedWeekId) return;
 
     try {
-      // Always supply contest_week_id
+      // Always filter by contest_week_id
       let query = supabase
         .from('votes')
         .select('app_id')
@@ -159,9 +157,7 @@ const Home = () => {
   }, [user]);
 
   const fetchApps = useCallback(async () => {
-    // Enforce contest_week_id (selectedWeekId) is always required
     if (!selectedWeekId) return;
-
     try {
       let query = supabase
         .from('apps')
@@ -194,7 +190,7 @@ const Home = () => {
   }, [selectedWeekId]);
 
   useEffect(() => {
-    // Only fetch data if we have a selectedWeekId (should always be true)
+    // Only fetch if selectedWeekId (should always be true)
     if (selectedWeekId) {
       setLoading(true);
       fetchApps();
@@ -222,7 +218,7 @@ const Home = () => {
 
     if (userVotes.includes(appId)) {
       try {
-        // Always include contest_week_id in vote delete
+        // Always include contest_week_id in delete
         const { error } = await supabase
           .from('votes')
           .delete()
@@ -247,26 +243,18 @@ const Home = () => {
         return;
       }
       try {
+        // Always include contest_week_id in insert
         const voteData = {
           user_id: user.id,
-          app_id: appId
+          app_id: appId,
+          contest_week_id: selectedWeekId
         };
-        if (hasValidContestStructure && selectedWeekId) {
-          voteData.contest_week_id = selectedWeekId;
-        }
         const { error } = await supabase
           .from('votes')
           .insert([voteData]);
 
         if (error) {
-          if (error.code === '42703' && error.message.includes('contest_week_id')) {
-            const { error: fallbackError } = await supabase
-              .from('votes')
-              .insert([{ user_id: user.id, app_id: appId }]);
-            if (fallbackError) throw fallbackError;
-          } else {
-            throw error;
-          }
+          throw error;
         }
 
         setUserVotes([...userVotes, appId]);
