@@ -66,6 +66,7 @@ const Home = () => {
 
   // Synchronously obtain the initial weekId
   function syncInitialWeekId() {
+    // Try to get week from URL, localStorage, or context, default always to 1 (string/number OK)
     const urlWeekId = getContestWeekIdFromUrl();
     const allWeeks = getAllWeeks();
     if (
@@ -91,11 +92,15 @@ const Home = () => {
     if (currentWeek && currentWeek.id) {
       return currentWeek.id;
     }
-    return 1;
+    return 1; // ALWAYS return 1 as last resort fallback, string or number is fine
   }
 
-  // Always initialize selectedWeekId synchronously!
-  const [selectedWeekId, setSelectedWeekId] = useState(() => syncInitialWeekId());
+  // Always initialize selectedWeekId synchronously, guarantee never '', null, or undefined; always number or string '1'
+  const [selectedWeekId, setSelectedWeekId] = useState(() => {
+    const id = syncInitialWeekId();
+    // Ensure never undefined, null, or '', always '1' at worst
+    return id || 1;
+  });
 
   // Watch for context/user changes and re-sync selectedWeekId only if week list changes.
   useEffect(() => {
@@ -116,44 +121,28 @@ const Home = () => {
   // Fetch functions
   const fetchUserVotes = useCallback(async () => {
     if (!user?.id) return;
-    if (hasValidContestStructure && !selectedWeekId) return;
+    // FORCE: always require selectedWeekId
+    if (!selectedWeekId) return;
 
     try {
+      // Always supply contest_week_id
       let query = supabase
         .from('votes')
         .select('app_id')
-        .eq('user_id', user.id);
-
-      if (selectedWeekId && hasValidContestStructure) {
-        query = query.eq('contest_week_id', selectedWeekId);
-      } else if (hasValidContestStructure && !selectedWeekId) {
-        return;
-      }
+        .eq('user_id', user.id)
+        .eq('contest_week_id', selectedWeekId);
 
       const { data, error } = await query;
 
       if (error) {
-        if (error.code === '42703') {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('votes')
-            .select('app_id')
-            .eq('user_id', user.id);
-
-          if (fallbackError) {
-            throw fallbackError;
-          }
-
-          setUserVotes(fallbackData?.map(vote => vote.app_id) || []);
-        } else {
-          throw error;
-        }
+        throw error;
       } else {
         setUserVotes(data?.map(vote => vote.app_id) || []);
       }
     } catch (error) {
       console.error('Error fetching user votes:', error.message);
     }
-  }, [user, selectedWeekId, hasValidContestStructure]);
+  }, [user, selectedWeekId]);
 
   const fetchUserProfile = useCallback(async () => {
     if (!user?.id) return;
