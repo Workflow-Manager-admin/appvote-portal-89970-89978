@@ -47,11 +47,11 @@ const Home = () => {
         ) : (
           <div>
             <h3>{selectedWeek && `Apps for Week ${selectedWeek}`}</h3>
-            {weekData.length === 0 ? (
+            {(Array.isArray(weekData) ? weekData.length === 0 : true) ? (
               <p>No apps have been submitted for this week yet.</p>
             ) : (
               <div className="apps-list">
-                {weekData.map((app) => (
+                {(Array.isArray(weekData) ? weekData : []).map((app) => (
                   <div className="app-card" key={app.id}>
                     <img
                       src={app.previewImgUrl}
