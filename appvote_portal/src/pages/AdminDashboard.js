@@ -38,8 +38,10 @@ const AdminDashboard = () => {
     }
   }, [isAdmin, currentWeek]);
 
+  // PUBLIC_INTERFACE
   const fetchApps = async (weekId = selectedWeekId) => {
     try {
+      // Step 1: Fetch all apps for this week (no vote info)
       let query = supabase
         .from('apps')
         .select(`
@@ -49,15 +51,13 @@ const AdminDashboard = () => {
           image_url,
           user_id,
           created_at,
-          contest_week_id,
-          votes:votes (count)
+          contest_week_id
         `);
 
       // If contest schema exists and week is selected, filter by week
       if (hasValidContestStructure && weekId) {
         query = query
-          .eq('contest_week_id', weekId)
-          .eq('votes.contest_week_id', weekId);
+          .eq('contest_week_id', weekId);
       }
 
       // Execute query
@@ -65,7 +65,32 @@ const AdminDashboard = () => {
 
       if (appsError) throw appsError;
 
-      // Then fetch user profiles separately to get the complete profile data
+      if (!appsData || appsData.length === 0) {
+        setApps([]);
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Fetch all votes for the visible apps, for this week
+      const appIds = appsData.map(app => app.id);
+      let votesQuery = supabase
+        .from('votes')
+        .select('app_id')
+        .in('app_id', appIds);
+      if (hasValidContestStructure && weekId)
+        votesQuery = votesQuery.eq('contest_week_id', weekId);
+
+      const { data: votesData, error: votesError } = await votesQuery;
+      if (votesError) throw votesError;
+
+      // Aggregate vote counts per app
+      const voteCountMap = {};
+      votesData?.forEach(vote => {
+        if (!voteCountMap[vote.app_id]) voteCountMap[vote.app_id] = 0;
+        voteCountMap[vote.app_id]++;
+      });
+
+      // Step 3: Fetch user profiles for display
       const userIds = appsData.map(app => app.user_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
@@ -76,16 +101,16 @@ const AdminDashboard = () => {
 
       // Create a profiles lookup map for easy access
       const profilesMap = {};
-      profilesData.forEach(profile => {
+      (profilesData || []).forEach(profile => {
         profilesMap[profile.id] = profile;
       });
 
       // Process the data to count votes and format for display
       const processedApps = appsData.map(app => {
-        // Count votes for each app
-        const voteCount = app.votes ? app.votes.length : 0;
+        // Get the aggregated vote count for this app
+        const voteCount = voteCountMap[app.id] || 0;
         const profile = profilesMap[app.user_id] || {};
-        
+
         return {
           id: app.id,
           name: app.name,
