@@ -162,8 +162,9 @@ const AddApp = () => {
               {...register('link', { 
                 required: 'App URL is required',
                 pattern: {
-                  value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
-                  message: 'Please enter a valid URL'
+                  // Accepts ONLY URLs that start with 'https://'
+                  value: /^https:\/\/[\w\-]+(\.[\w\-]+)+[\/#?]?.*$/,
+                  message: 'Please enter a valid HTTPS URL (must start with https://)'
                 }
               })}
               className={errors.link ? 'input-error' : ''}
