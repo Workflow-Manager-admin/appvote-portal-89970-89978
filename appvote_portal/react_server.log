@@ -28,3 +28,24 @@ Compiling...
 Compiled successfully!
 webpack compiled successfully
 Compiling...
+Compiled successfully!
+webpack compiled successfully
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/components/ConfirmationModal.js
+  Line 21:3:  React Hook "React.useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/pages/Home.js
+  Line 16:8:  'ConfirmationModal' is defined but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/components/ConfirmationModal.js
+  Line 21:3:  React Hook "React.useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning

@@ -13,6 +13,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import { useContest } from '../contexts/ContestContext';
 import supabase, { getImageUrl } from '../config/supabaseClient';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const Home = () => {
   const { user, isAdmin } = useAuth();
