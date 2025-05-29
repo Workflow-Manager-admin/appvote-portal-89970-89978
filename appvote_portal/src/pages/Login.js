@@ -17,21 +17,38 @@ const Login = () => {
     }
   }, [user, loading, navigate]);
 
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [formError, setFormError] = useState('');
+
   const onSubmit = async (data) => {
     setSubmitting(true);
-    
+    setFormError('');
+    setEmailNotConfirmed(false);
+
     try {
       const { email, password } = data;
       const { error } = await login(email, password);
-      
+
       if (error) {
-        toast.error(error.message || 'Failed to sign in');
+        // Supabase may return "Email not confirmed" or similar
+        if (
+          error.message &&
+          (error.message.toLowerCase().includes('email not confirmed') ||
+            error.message.toLowerCase().includes('email not verified') ||
+            error.message.toLowerCase().includes('confirm your email'))
+        ) {
+          setEmailNotConfirmed(true);
+        } else {
+          setFormError(error.message || 'Failed to sign in');
+          toast.error(error.message || 'Failed to sign in');
+        }
       } else {
         toast.success('Signed in successfully');
         // Navigation will happen automatically via the useEffect
       }
     } catch (error) {
       console.error('Error during login:', error);
+      setFormError('An unexpected error occurred');
       toast.error('An unexpected error occurred');
     } finally {
       setSubmitting(false);
@@ -47,7 +64,36 @@ const Login = () => {
           </Link>
           <h2 className="auth-title">Sign In</h2>
         </div>
-        
+
+        {emailNotConfirmed && (
+          <div className="verify-notice" style={{
+            background: '#fff1ea',
+            border: '1px solid #d35400',
+            color: '#b75d17',
+            padding: '14px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontWeight: 500,
+            textAlign: 'center'
+          }}>
+            Email not confirmed. Please check your inbox and click the verification link before logging in.
+          </div>
+        )}
+        {formError && !emailNotConfirmed && (
+          <div className="form-error-message" style={{
+            background: '#ffeaea',
+            border: '1px solid #ed2c2c',
+            color: '#d91400',
+            padding: '10px 14px',
+            borderRadius: '6px',
+            marginBottom: '12px',
+            fontWeight: 500,
+            textAlign: 'center'
+          }}>
+            {formError}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
