@@ -20,8 +20,9 @@ const Register = () => {
       if (error) {
         toast.error(error.message || 'Failed to create account');
       } else {
-        toast.success('Account created successfully! Signing you in...');
-        navigate('/');
+        // Instead of auto-signing in and navigating, alert user to verify email clearly
+        toast.success('Registration successful! Please check your email and verify your account before logging in.');
+        setShowVerifyNotice(true);
       }
     } catch (error) {
       console.error('Error during registration:', error);
