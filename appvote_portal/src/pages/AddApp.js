@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
@@ -7,13 +7,104 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContest } from '../contexts/ContestContext';
 import supabase, { getImageUrl } from '../config/supabaseClient';
 
+const FORM_STORAGE_KEY = "addAppFormState";
+
+/**
+ * Utility: Save form state (excluding File objects) to localStorage.
+ */
+function persistFormState(form, imagePreview) {
+  // Exclude file objects; can only store values/strings
+  const data = {
+    name: form.name || "",
+    link: form.link || "",
+    imagePreview: imagePreview || null,
+  };
+  localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+}
+
+/**
+ * Utility: Load form state from localStorage.
+ */
+function loadFormState() {
+  const data = localStorage.getItem(FORM_STORAGE_KEY);
+  if (!data) return { name: "", link: "", imagePreview: null };
+  try {
+    const parsed = JSON.parse(data);
+    return {
+      name: parsed.name || "",
+      link: parsed.link || "",
+      imagePreview: parsed.imagePreview || null,
+    };
+  } catch {
+    return { name: "", link: "", imagePreview: null };
+  }
+}
+
+/**
+ * Utility: Clear form persisted state (localStorage).
+ */
+function clearFormState() {
+  localStorage.removeItem(FORM_STORAGE_KEY);
+}
+
 const AddApp = () => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
   const { user } = useAuth();
   const { currentWeek, canSubmitApps, hasValidContestStructure } = useContest();
   const navigate = useNavigate();
+
+  // Restore from storage
+  const restored = loadFormState();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    getValues,
+    formState: { errors },
+    reset
+  } = useForm({
+    defaultValues: {
+      name: restored.name,
+      link: restored.link,
+    }
+  });
+  const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(restored.imagePreview);
+  // react-hook-form does not persist file input (image) nor can file object be stored, must prompt user to reselect
+
+  // Keep localStorage in sync as user types
+  useEffect(() => {
+    const subscription = () => {
+      const current = getValues();
+      persistFormState(current, imagePreview);
+    };
+    // Listen to all input value changes
+    const unsubscribe = register("name", {
+      onChange: subscription
+    });
+    register("link", { onChange: subscription });
+
+    // On unmount, cleanup.
+    return () => {
+      unsubscribe && unsubscribe();
+    };
+    // eslint-disable-next-line
+  }, [register, getValues, imagePreview]);
+
+  // Also persist image preview changes
+  useEffect(() => {
+    // Save preview each time it changes along with the current values
+    persistFormState(getValues(), imagePreview);
+    // eslint-disable-next-line
+  }, [imagePreview]);
+
+  // On mount, restore form state and image preview
+  useEffect(() => {
+    setValue("name", restored.name);
+    setValue("link", restored.link);
+    setImagePreview(restored.imagePreview);
+    // eslint-disable-next-line
+  }, []); // only on initial mount
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -31,9 +122,10 @@ const AddApp = () => {
       return;
     }
 
-    // Create preview URL
+    // Create preview URL (store only the blob URL in localStorage, file object must be reselected by user)
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
+    // Do not persist file object
   };
 
   const onSubmit = async (data) => {
@@ -52,29 +144,22 @@ const AddApp = () => {
 
     try {
       const { name, link } = data;
-      const imageFile = data.image[0];
+      const imageFile = data.image && data.image[0];
       let imageUrl = null;
 
-      // Upload image if provided
       if (imageFile) {
         try {
           const fileExt = imageFile.name.split('.').pop();
           const fileName = `${uuidv4()}.${fileExt}`;
           const filePath = `${user.id}/${fileName}`;
 
-          console.log('Uploading image to path:', filePath);
-          
-          // Upload the file to Supabase storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('app_images')
             .upload(filePath, imageFile);
 
           if (uploadError) {
-            console.error('Image upload error:', uploadError);
             throw new Error(`Image upload failed: ${uploadError.message}`);
           }
-          
-          console.log('Image uploaded successfully:', uploadData);
 
           // Get the public URL of the uploaded file with our helper function
           const publicUrl = getImageUrl('app_images', filePath);
@@ -82,13 +167,14 @@ const AddApp = () => {
           if (!publicUrl) {
             throw new Error('Failed to generate public URL for the image');
           }
-          
-          console.log('Generated public URL:', publicUrl);
           imageUrl = publicUrl;
         } catch (uploadError) {
-          console.error('Error in image upload process:', uploadError);
           throw uploadError;
         }
+      } else {
+        toast.error("Please select a preview image.");
+        setLoading(false);
+        return;
       }
 
       // Save app data to database, include contest_week_id if schema supports it
@@ -109,9 +195,14 @@ const AddApp = () => {
       }
 
       toast.success('App submitted successfully!');
+
+      // Clear localStorage and form states
+      clearFormState();
+      reset();
+      setImagePreview(null);
+
       navigate('/');
     } catch (error) {
-      console.error('Error submitting app:', error.message);
       toast.error(error.message || 'Failed to submit app');
     } finally {
       setLoading(false);
@@ -134,7 +225,7 @@ const AddApp = () => {
       )}
       
       <div className="add-app-form-container">
-        <form onSubmit={handleSubmit(onSubmit)} className="add-app-form">
+        <form onSubmit={handleSubmit(onSubmit)} className="add-app-form" autoComplete="off">
           <div className="form-group">
             <label htmlFor="name">App Name</label>
             <input
@@ -149,6 +240,8 @@ const AddApp = () => {
                 }
               })}
               className={errors.name ? 'input-error' : ''}
+              autoComplete="off"
+              onBlur={() => persistFormState(getValues(), imagePreview)}
             />
             {errors.name && <p className="error-message">{errors.name.message}</p>}
           </div>
@@ -168,6 +261,8 @@ const AddApp = () => {
                 }
               })}
               className={errors.link ? 'input-error' : ''}
+              autoComplete="off"
+              onBlur={() => persistFormState(getValues(), imagePreview)}
             />
             {errors.link && <p className="error-message">{errors.link.message}</p>}
           </div>
