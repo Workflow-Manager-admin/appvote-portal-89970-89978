@@ -499,7 +499,7 @@ const Home = () => {
                     onClick={() => handleVote(app.id)}
                     disabled={userVotes.length >= 5 && !userVotes.includes(app.id)}
                   >
-                    {userVotes.includes(app.id) ? '\u2713 Voted' : 'Vote'}
+                    {userVotes.includes(app.id) ? '✓Voted' : 'Vote'}
                   </button>
                 )}
               </div>
