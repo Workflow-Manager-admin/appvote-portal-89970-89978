@@ -159,7 +159,8 @@ const Home = () => {
   }, [user]);
 
   const fetchApps = useCallback(async () => {
-    if (hasValidContestStructure && !selectedWeekId) return;
+    // Enforce contest_week_id (selectedWeekId) is always required
+    if (!selectedWeekId) return;
 
     try {
       let query = supabase
@@ -174,34 +175,13 @@ const Home = () => {
           contest_week_id,
           profiles:user_id (username, registration_number)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .eq('contest_week_id', selectedWeekId);
 
-      if (selectedWeekId && hasValidContestStructure) {
-        query = query.eq('contest_week_id', selectedWeekId);
-      } else if (hasValidContestStructure && !selectedWeekId) {
-        return;
-      } else if (user && hasValidContestStructure) {
-        const activeWeek = getActiveWeek && getActiveWeek();
-        if (activeWeek) {
-          query = query.eq('contest_week_id', activeWeek.id);
-        }
-      }
       const { data, error } = await query;
 
       if (error) {
-        if (error.code === '42703') {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('apps')
-            .select(`id, name, link, image_url, created_at, user_id, profiles:user_id (username, registration_number)`)
-            .order('created_at', { ascending: false });
-
-          if (fallbackError) {
-            throw fallbackError;
-          }
-          setApps(fallbackData || []);
-        } else {
-          throw error;
-        }
+        throw error;
       } else {
         setApps(data || []);
       }
@@ -211,24 +191,17 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedWeekId, hasValidContestStructure, user, getActiveWeek]);
+  }, [selectedWeekId]);
 
   useEffect(() => {
-    if (
-      !hasValidContestStructure ||
-      (hasValidContestStructure && selectedWeekId)
-    ) {
-      if (
-        (!hasValidContestStructure) ||
-        (hasValidContestStructure && selectedWeekId)
-      ) {
-        setLoading(true);
-        fetchApps();
-        fetchUserVotes();
-        fetchUserProfile();
-      }
+    // Only fetch data if we have a selectedWeekId (should always be true)
+    if (selectedWeekId) {
+      setLoading(true);
+      fetchApps();
+      fetchUserVotes();
+      fetchUserProfile();
     }
-  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId, hasValidContestStructure, user]);
+  }, [fetchApps, fetchUserVotes, fetchUserProfile, selectedWeekId]);
 
   // Voting logic...
   const handleVote = async (appId) => {
@@ -249,30 +222,16 @@ const Home = () => {
 
     if (userVotes.includes(appId)) {
       try {
-        let query = supabase
+        // Always include contest_week_id in vote delete
+        const { error } = await supabase
           .from('votes')
           .delete()
           .eq('user_id', user.id)
-          .eq('app_id', appId);
-
-        if (hasValidContestStructure && selectedWeekId) {
-          query = query.eq('contest_week_id', selectedWeekId);
-        }
-
-        const { error } = await query;
+          .eq('app_id', appId)
+          .eq('contest_week_id', selectedWeekId);
 
         if (error) {
-          if (error.code === '42703' && error.message.includes('contest_week_id')) {
-            const { error: fallbackError } = await supabase
-              .from('votes')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('app_id', appId);
-
-            if (fallbackError) throw fallbackError;
-          } else {
-            throw error;
-          }
+          throw error;
         }
 
         setUserVotes(userVotes.filter(id => id !== appId));
