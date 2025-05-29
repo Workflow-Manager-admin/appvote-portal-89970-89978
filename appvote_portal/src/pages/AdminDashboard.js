@@ -265,6 +265,9 @@ const AdminDashboard = () => {
       {selectedTab === 'apps' && (
         <>
           <div className="admin-actions">
+            <button className="btn btn-refresh" onClick={() => { setLoading(true); fetchApps(selectedWeekId); }}>
+              Refresh
+            </button>
             <button className="btn btn-share" onClick={generateShareableLink}>
               Share Top 10
             </button>
