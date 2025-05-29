@@ -84,9 +84,11 @@ const AddApp = () => {
     });
     register("link", { onChange: subscription });
 
-    // On unmount, cleanup.
+    // On unmount, cleanup. Make sure to only call if it's actually a function.
     return () => {
-      unsubscribe && unsubscribe();
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
     };
     // eslint-disable-next-line
   }, [register, getValues, imagePreview]);
