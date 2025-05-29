@@ -15,19 +15,21 @@ const ConfirmationModal = ({
   cancelText = "Cancel",
   loading = false,
 }) => {
-  if (!isOpen) return null;
-
   // Trap focus to modal (basic accessibility)
   React.useEffect(() => {
-    // Focus the confirm button
-    const confirmBtn = document.getElementById("confirm-modal-btn");
-    if (confirmBtn) confirmBtn.focus();
-    // Prevent scrolling background (typical modal pattern)
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
+    if (isOpen) {
+      // Focus the confirm button
+      const confirmBtn = document.getElementById("confirm-modal-btn");
+      if (confirmBtn) confirmBtn.focus();
+      // Prevent scrolling background (typical modal pattern)
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="confirmation-modal-overlay" tabIndex={-1} role="dialog" aria-modal="true">
